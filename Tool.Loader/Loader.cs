@@ -2,30 +2,50 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Text;
 using Tool.Interface;
 
 namespace Tool.Loader {
 	internal static class Loader {
+		private static readonly string ConsoleTitle = GetAssemblyAttribute<AssemblyProductAttribute>().Product + " v" + Assembly.GetExecutingAssembly().GetName().Version.ToString() + " by " + GetAssemblyAttribute<AssemblyCopyrightAttribute>().Copyright.Substring(17);
+
+		private static T GetAssemblyAttribute<T>() => (T)Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(T), false)[0];
+
 		public static void Execute(string[] args) {
 			string toolPath;
 			string filePath;
 			string[] otherArgs;
 			ITool tool;
 
-			if (args != null && args.Length > 1) {
-				toolPath = args[0];
+			Console.Title = ConsoleTitle;
+			if (args == null || args.Length == 0) {
+				// 直接运行加载器
+				StringBuilder allArgs;
+
+				allArgs = new StringBuilder();
+				Console.WriteLine("Enter tool path:");
+				allArgs.Append(Console.ReadLine());
+				allArgs.Append(" ");
+				Console.WriteLine("Enter .NET Assembly path:");
+				allArgs.Append(Console.ReadLine());
+				allArgs.Append(" ");
+				Console.WriteLine("Enter other args:");
+				allArgs.Append(Console.ReadLine());
+				Process.Start(Process.GetCurrentProcess().MainModule.FileName, allArgs.ToString().Trim());
+				Environment.Exit(0);
+			}
+			toolPath = args[0];
+			if (args.Length == 1) {
+				// 仅为工具提供指定CLR环境
+				filePath = null;
+				otherArgs = null;
+			}
+			else {
+				// 使用指定参数与指定CLR环境启动工具
 				filePath = args[1];
 				otherArgs = new string[args.Length - 2];
 				if (otherArgs.Length != 0)
 					Array.Copy(args, 2, otherArgs, 0, otherArgs.Length);
-			}
-			else {
-				Console.WriteLine("Enter tool path:");
-				toolPath = Console.ReadLine();
-				Console.WriteLine("Enter .NET Assembly path:");
-				filePath = Console.ReadLine();
-				Console.WriteLine("Enter other args:");
-				otherArgs = Console.ReadLine().Split(' ');
 			}
 			tool = CreateToolInstance(Assembly.LoadFile(Path.GetFullPath(toolPath)));
 			Console.Title = tool.Title;
