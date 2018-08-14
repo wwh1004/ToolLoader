@@ -2,11 +2,15 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using Tool.Interface;
 
 namespace Tool.Loader {
-	internal static class Loader {
+	internal static unsafe class Loader {
+		[DllImport("shell32.dll", BestFitMapping = false, CharSet = CharSet.Unicode, EntryPoint = "CommandLineToArgvW", ExactSpelling = true, SetLastError = true)]
+		private static extern char** CommandLineToArgv(string lpCmdLine, int* pNumArgs);
+
 		private static readonly string ConsoleTitle = GetAssemblyAttribute<AssemblyProductAttribute>().Product + " v" + Assembly.GetExecutingAssembly().GetName().Version.ToString() + " by " + GetAssemblyAttribute<AssemblyCopyrightAttribute>().Copyright.Substring(17);
 
 		private static T GetAssemblyAttribute<T>() => (T)Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(T), false)[0];
@@ -20,18 +24,18 @@ namespace Tool.Loader {
 			Console.Title = ConsoleTitle;
 			if (args == null || args.Length == 0) {
 				// 直接运行加载器
-				StringBuilder allArgs;
+				StringBuilder commandLine;
 
-				allArgs = new StringBuilder();
+				commandLine = new StringBuilder();
 				Console.WriteLine("Enter tool path:");
-				allArgs.Append(Console.ReadLine());
-				allArgs.Append(" ");
+				commandLine.Append(Console.ReadLine());
+				commandLine.Append(" ");
 				Console.WriteLine("Enter .NET Assembly path:");
-				allArgs.Append(Console.ReadLine());
-				allArgs.Append(" ");
+				commandLine.Append(Console.ReadLine());
+				commandLine.Append(" ");
 				Console.WriteLine("Enter other args:");
-				allArgs.Append(Console.ReadLine());
-				Process.Start(Process.GetCurrentProcess().MainModule.FileName, allArgs.ToString().Trim());
+				commandLine.Append(Console.ReadLine());
+				Execute(CommandLineToArgs(commandLine.ToString()));
 				Environment.Exit(0);
 			}
 			toolPath = args[0];
@@ -59,7 +63,19 @@ namespace Tool.Loader {
 				}
 			}
 		}
+		private static string[] CommandLineToArgs(string commandLine) {
+			char** pArgs;
+			int length;
+			string[] args;
 
+			pArgs = CommandLineToArgv(commandLine, &length);
+			if (pArgs == null)
+				return null;
+			args = new string[length];
+			for (int i = 0; i < length; i++)
+				args[i] = new string(pArgs[i]);
+			return args;
+		}
 		private static ITool CreateToolInstance(Assembly assembly) {
 			Type toolType;
 
