@@ -8,58 +8,59 @@ using Tool.Interface;
 
 namespace Tool.Loader {
 	internal static unsafe class Loader {
-		[DllImport("shell32.dll", BestFitMapping = false, CharSet = CharSet.Unicode, EntryPoint = "CommandLineToArgvW", ExactSpelling = true, SetLastError = true)]
+		[DllImport("shell32.dll", BestFitMapping = false, CharSet = CharSet.Unicode, SetLastError = true)]
 		private static extern char** CommandLineToArgv(string lpCmdLine, int* pNumArgs);
+
+		[DllImport("kernel32.dll", BestFitMapping = false, CharSet = CharSet.Unicode, SetLastError = true)]
+		private static extern void* LocalFree(void* hMem);
 
 		private static readonly string ConsoleTitle = GetAssemblyAttribute<AssemblyProductAttribute>().Product + " v" + Assembly.GetExecutingAssembly().GetName().Version.ToString() + " by " + GetAssemblyAttribute<AssemblyCopyrightAttribute>().Copyright.Substring(17);
 
-		private static T GetAssemblyAttribute<T>() => (T)Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(T), false)[0];
+		private static T GetAssemblyAttribute<T>() where T : Attribute => (T)Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(T), false)[0];
 
 		public static void Execute(string[] args) {
 			string toolPath;
-			string filePath;
-			string[] otherArgs;
-			ITool tool;
+			object tool;
+			Type toolSettingsType;
+			string[] toolArguments;
+			object[] invokeParameters;
 
-			Console.Title = ConsoleTitle;
+			try {
+				Console.Title = ConsoleTitle;
+			}
+			catch {
+			}
 			if (args == null || args.Length == 0) {
-				// 直接运行加载器
+				// 直接运行加载器或调试时使用
 				StringBuilder commandLine;
 
 				commandLine = new StringBuilder();
-				Console.WriteLine("Enter tool path:");
+				Console.WriteLine("Specify tool path:");
 				commandLine.Append(Console.ReadLine());
-				commandLine.Append(" ");
-				Console.WriteLine("Enter .NET Assembly path:");
+				Console.WriteLine("Specify arguments:");
 				commandLine.Append(Console.ReadLine());
-				commandLine.Append(" ");
-				Console.WriteLine("Enter other args:");
-				commandLine.Append(Console.ReadLine());
+				Console.WriteLine();
+				Console.WriteLine();
 				Execute(CommandLineToArgs(commandLine.ToString()));
-				Environment.Exit(0);
+				return;
 			}
 			toolPath = args[0];
-			if (args.Length == 1) {
-				// 仅为工具提供指定CLR环境
-				filePath = null;
-				otherArgs = null;
-			}
-			else {
-				// 使用指定参数与指定CLR环境启动工具
-				filePath = args[1];
-				otherArgs = new string[args.Length - 2];
-				if (otherArgs.Length != 0)
-					Array.Copy(args, 2, otherArgs, 0, otherArgs.Length);
-			}
-			tool = CreateToolInstance(Assembly.LoadFile(Path.GetFullPath(toolPath)));
-			Console.Title = tool.Title;
-			tool.Execute(filePath, otherArgs);
+			tool = CreateToolInstance(Assembly.LoadFile(Path.GetFullPath(toolPath)), out toolSettingsType);
+			Console.Title = (string)tool.GetType().GetProperty("Title").GetValue(tool, null);
+			toolArguments = new string[args.Length - 1];
+			for (int i = 0; i < toolArguments.Length; i++)
+				toolArguments[i] = args[i + 1];
+			invokeParameters = new object[] { toolArguments, null };
+			if ((bool)typeof(CommandLine).GetMethod("TryParse").MakeGenericMethod(toolSettingsType).Invoke(null, invokeParameters))
+				tool.GetType().GetMethod("Execute").Invoke(tool, new object[] { invokeParameters[1] });
+			else
+				Console.Error.WriteLine("Unknown command or invalid arguments.");
 			if (IsN00bUser() || Debugger.IsAttached) {
-				Console.Error.WriteLine("\n\nPress any key to exit...\n");
+				Console.WriteLine("Press any key to exit...");
 				try {
 					Console.ReadKey(true);
 				}
-				catch (InvalidOperationException) {
+				catch {
 				}
 			}
 		}
@@ -74,16 +75,26 @@ namespace Tool.Loader {
 			args = new string[length];
 			for (int i = 0; i < length; i++)
 				args[i] = new string(pArgs[i]);
+			LocalFree(pArgs);
 			return args;
 		}
-		private static ITool CreateToolInstance(Assembly assembly) {
-			Type toolType;
 
-			toolType = typeof(ITool);
+		private static object CreateToolInstance(Assembly assembly, out Type toolSettingsType) {
+			Type genericToolType;
+
+			genericToolType = typeof(CliArgumentAttribute).Module.GetType("Tool.Interface.ITool`1");
 			foreach (Type type in assembly.ManifestModule.GetTypes())
-				foreach (Type interfaceType in type.GetInterfaces())
-					if (interfaceType == toolType)
-						return (ITool)Activator.CreateInstance(type);
+				foreach (Type interfaceType in type.GetInterfaces()) {
+					Type[] genericArguments;
+
+					genericArguments = interfaceType.GetGenericArguments();
+					if (!interfaceType.IsGenericType || genericArguments.Length != 1)
+						continue;
+					if (interfaceType.IsAssignableFrom(genericToolType.MakeGenericType(genericArguments[0]))) {
+						toolSettingsType = genericArguments[0];
+						return Activator.CreateInstance(type);
+					}
+				}
 			throw new InvalidOperationException();
 		}
 

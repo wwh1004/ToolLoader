@@ -2,7 +2,8 @@ namespace Tool.Interface {
 	/// <summary>
 	/// .NET逆向工具接口
 	/// </summary>
-	public interface ITool {
+	/// <typeparam name="TToolSettings"></typeparam>
+	public interface ITool<TToolSettings> where TToolSettings : new() {
 		/// <summary>
 		/// 显示在控制台上的标题
 		/// </summary>
@@ -11,8 +12,7 @@ namespace Tool.Interface {
 		/// <summary>
 		/// 执行
 		/// </summary>
-		/// <param name="filePath">文件路径</param>
-		/// <param name="otherArgs">其它参数</param>
-		void Execute(string filePath, string[] otherArgs);
+		/// <param name="settings">设置</param>
+		void Execute(TToolSettings settings);
 	}
 }
