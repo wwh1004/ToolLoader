@@ -14,10 +14,6 @@ namespace Tool.Loader {
 		[DllImport("kernel32.dll", BestFitMapping = false, CharSet = CharSet.Unicode, SetLastError = true)]
 		private static extern void* LocalFree(void* hMem);
 
-		private static readonly string ConsoleTitle = GetAssemblyAttribute<AssemblyProductAttribute>().Product + " v" + Assembly.GetExecutingAssembly().GetName().Version.ToString() + " by " + GetAssemblyAttribute<AssemblyCopyrightAttribute>().Copyright.Substring(17);
-
-		private static T GetAssemblyAttribute<T>() where T : Attribute => (T)Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(T), false)[0];
-
 		public static void Execute(string[] args) {
 			string toolPath;
 			object tool;
@@ -26,7 +22,7 @@ namespace Tool.Loader {
 			object[] invokeParameters;
 
 			try {
-				Console.Title = ConsoleTitle;
+				Console.Title = GetAssemblyAttribute<AssemblyProductAttribute>().Product + " v" + Assembly.GetExecutingAssembly().GetName().Version.ToString() + " by " + GetAssemblyAttribute<AssemblyCopyrightAttribute>().Copyright.Substring(17); ;
 			}
 			catch {
 			}
@@ -46,7 +42,11 @@ namespace Tool.Loader {
 			}
 			toolPath = args[0];
 			tool = CreateToolInstance(Assembly.LoadFile(Path.GetFullPath(toolPath)), out toolSettingsType);
-			Console.Title = (string)tool.GetType().GetProperty("Title").GetValue(tool, null);
+			try {
+				Console.Title = (string)tool.GetType().GetProperty("Title").GetValue(tool, null);
+			}
+			catch {
+			}
 			toolArguments = new string[args.Length - 1];
 			for (int i = 0; i < toolArguments.Length; i++)
 				toolArguments[i] = args[i + 1];
@@ -64,6 +64,9 @@ namespace Tool.Loader {
 				}
 			}
 		}
+
+		private static T GetAssemblyAttribute<T>() where T : Attribute => (T)Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(T), false)[0];
+
 		private static string[] CommandLineToArgs(string commandLine) {
 			char** pArgs;
 			int length;
