@@ -1,0 +1,75 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{A98D2096-ED8D-4F8D-B54B-F61BCB9B6365}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Tool.Loader.Auto</RootNamespace>
+    <AssemblyName>Tool.Loader.Auto</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>7.3</LangVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>7.3</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Mdlib\DotNet\Metadata\ComImageFlags.cs" />
+    <Compile Include="Mdlib\DotNet\Metadata\Cor20Header.cs" />
+    <Compile Include="Mdlib\DotNet\Metadata\HeapFlags.cs" />
+    <Compile Include="Mdlib\DotNet\Metadata\HeapStream.cs" />
+    <Compile Include="Mdlib\DotNet\Metadata\Metadata.cs" />
+    <Compile Include="Mdlib\DotNet\Metadata\MetadataStream.cs" />
+    <Compile Include="Mdlib\DotNet\Metadata\MetadataTable.cs" />
+    <Compile Include="Mdlib\DotNet\Metadata\MetadataToken.cs" />
+    <Compile Include="Mdlib\DotNet\Metadata\NativeMethods.cs" />
+    <Compile Include="Mdlib\DotNet\Metadata\StorageHeader.cs" />
+    <Compile Include="Mdlib\DotNet\Metadata\StorageSignature.cs" />
+    <Compile Include="Mdlib\DotNet\Metadata\StreamHeader.cs" />
+    <Compile Include="Mdlib\DotNet\Metadata\TableRows.cs" />
+    <Compile Include="Mdlib\DotNet\Metadata\TableStream.cs" />
+    <Compile Include="Mdlib\DotNet\Metadata\TableType.cs" />
+    <Compile Include="Mdlib\PE\Address.cs" />
+    <Compile Include="Mdlib\PE\DataDirectory.cs" />
+    <Compile Include="Mdlib\PE\DosHeader.cs" />
+    <Compile Include="Mdlib\PE\FileHeader.cs" />
+    <Compile Include="Mdlib\PE\IRawData.cs" />
+    <Compile Include="Mdlib\PE\MachineType.cs" />
+    <Compile Include="Mdlib\PE\NativeMethods.cs" />
+    <Compile Include="Mdlib\PE\NtHeader.cs" />
+    <Compile Include="Mdlib\PE\OptionalHeader.cs" />
+    <Compile Include="Mdlib\PE\OptionalHeaderType.cs" />
+    <Compile Include="Mdlib\PE\PEImage.cs" />
+    <Compile Include="Mdlib\PE\SectionHeader.cs" />
+    <Compile Include="Mdlib\PE\SubsystemType.cs" />
+    <Compile Include="Mdlib\Utils.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

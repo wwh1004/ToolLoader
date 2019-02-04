@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27924.0
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28527.54
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tool.Interface", "Tool.Interface\Tool.Interface.csproj", "{7E415A01-2335-4068-9378-D0D8E9E2E8CC}"
 EndProject
@@ -16,6 +16,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tool.Loader.CLR40.x64", "Tool.Loader.CLR40.x64\Tool.Loader.CLR40.x64.csproj", "{12C8F9CB-5CBB-416A-B59C-44675D102FC2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestTool", "TestTool\TestTool.csproj", "{4E6317A1-8467-415A-A4FA-B1341A7D73A3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tool.Loader.Auto", "Tool.Loader.Auto\Tool.Loader.Auto.csproj", "{A98D2096-ED8D-4F8D-B54B-F61BCB9B6365}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -54,6 +56,10 @@ Global
 		{4E6317A1-8467-415A-A4FA-B1341A7D73A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4E6317A1-8467-415A-A4FA-B1341A7D73A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4E6317A1-8467-415A-A4FA-B1341A7D73A3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A98D2096-ED8D-4F8D-B54B-F61BCB9B6365}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A98D2096-ED8D-4F8D-B54B-F61BCB9B6365}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A98D2096-ED8D-4F8D-B54B-F61BCB9B6365}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A98D2096-ED8D-4F8D-B54B-F61BCB9B6365}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
