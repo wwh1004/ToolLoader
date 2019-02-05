@@ -10,6 +10,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)CommandLine.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ConsoleTitleUtils.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Loader.cs" />
   </ItemGroup>
 </Project>

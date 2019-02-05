@@ -22,7 +22,7 @@ namespace Tool.Loader {
 			object[] invokeParameters;
 
 			try {
-				Console.Title = GetAssemblyAttribute<AssemblyProductAttribute>().Product + " v" + Assembly.GetExecutingAssembly().GetName().Version.ToString() + " by " + GetAssemblyAttribute<AssemblyCopyrightAttribute>().Copyright.Substring(17); ;
+				Console.Title = ConsoleTitleUtils.GetTitle();
 			}
 			catch {
 			}
@@ -64,8 +64,6 @@ namespace Tool.Loader {
 				}
 			}
 		}
-
-		private static T GetAssemblyAttribute<T>() where T : Attribute => (T)Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(T), false)[0];
 
 		private static string[] CommandLineToArgs(string commandLine) {
 			char** pArgs;
