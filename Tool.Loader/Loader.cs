@@ -1,10 +1,10 @@
 using System;
+using System.Cli;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
-using Tool.Interface;
 
 namespace Tool.Loader {
 	internal static unsafe class Loader {
@@ -22,7 +22,7 @@ namespace Tool.Loader {
 			object[] invokeParameters;
 
 			try {
-				Console.Title = ConsoleTitleUtils.GetTitle();
+				Console.Title = GetTitle();
 			}
 			catch {
 			}
@@ -53,8 +53,10 @@ namespace Tool.Loader {
 			invokeParameters = new object[] { toolArguments, null };
 			if ((bool)typeof(CommandLine).GetMethod("TryParse").MakeGenericMethod(toolSettingsType).Invoke(null, invokeParameters))
 				tool.GetType().GetMethod("Execute").Invoke(tool, new object[] { invokeParameters[1] });
-			else
+			else {
 				Console.Error.WriteLine("Unknown command or invalid arguments.");
+				typeof(CommandLine).GetMethod("ShowUsage").MakeGenericMethod(toolSettingsType).Invoke(null, null);
+			}
 			if (IsN00bUser() || Debugger.IsAttached) {
 				Console.WriteLine("Press any key to exit...");
 				try {
@@ -63,6 +65,27 @@ namespace Tool.Loader {
 				catch {
 				}
 			}
+		}
+
+		private static string GetTitle() {
+			string productName;
+			string version;
+			string copyright;
+			int firstBlankIndex;
+			string copyrightOwnerName;
+			string copyrightYear;
+
+			productName = GetAssemblyAttribute<AssemblyProductAttribute>().Product;
+			version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+			copyright = GetAssemblyAttribute<AssemblyCopyrightAttribute>().Copyright.Substring(12);
+			firstBlankIndex = copyright.IndexOf(' ');
+			copyrightOwnerName = copyright.Substring(firstBlankIndex + 1);
+			copyrightYear = copyright.Substring(0, firstBlankIndex);
+			return $"{productName} v{version} by {copyrightOwnerName} {copyrightYear}";
+		}
+
+		private static T GetAssemblyAttribute<T>() {
+			return (T)Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(T), false)[0];
 		}
 
 		private static string[] CommandLineToArgs(string commandLine) {
@@ -83,7 +106,7 @@ namespace Tool.Loader {
 		private static object CreateToolInstance(Assembly assembly, out Type toolSettingsType) {
 			Type genericToolType;
 
-			genericToolType = typeof(CliArgumentAttribute).Module.GetType("Tool.Interface.ITool`1");
+			genericToolType = typeof(ArgumentAttribute).Module.GetType("Tool.Interface.ITool`1");
 			foreach (Type type in assembly.ManifestModule.GetTypes())
 				foreach (Type interfaceType in type.GetInterfaces()) {
 					Type[] genericArguments;

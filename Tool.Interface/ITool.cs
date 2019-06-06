@@ -1,6 +1,6 @@
 namespace Tool.Interface {
 	/// <summary>
-	/// .NET逆向工具接口
+	/// 工具接口
 	/// </summary>
 	/// <typeparam name="TToolSettings"></typeparam>
 	public interface ITool<TToolSettings> where TToolSettings : new() {

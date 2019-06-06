@@ -29,7 +29,7 @@
     <AssemblyOriginatorKeyFile>Tool.Interface.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="CliArgumentAttribute.cs" />
+    <Compile Include="ArgumentAttribute.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ITool.cs" />
   </ItemGroup>
