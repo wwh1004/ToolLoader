@@ -28,7 +28,7 @@ namespace Tool.Loader.Auto {
 
 			bool lastIsF;
 			string assemblyPath;
-			string newLoaderName;
+			string loaderName;
 			ProcessStartInfo startInfo;
 
 			lastIsF = false;
@@ -45,27 +45,32 @@ namespace Tool.Loader.Auto {
 			}
 			if (assemblyPath is null) {
 				Console.WriteLine("Not found -f argument.");
-				newLoaderName = "Tool.Loader.CLR40.x86.exe";
+				loaderName = "Tool.Loader.CLR40.x86.exe";
 			}
 			else
 				try {
-					bool is64Bit;
-					string version;
+					bool is64BitTargetTool;
+					string versionTargetTool;
+					bool is64BitTargetAssembly;
+					string versionTargetAssembly;
+					bool use64Bit;
+					bool useClr4x;
 
+					using (FileStream stream = new FileStream(args[0], FileMode.Open, FileAccess.Read))
+						GetDotNetInfo(stream, out is64BitTargetTool, out versionTargetTool);
 					using (FileStream stream = new FileStream(assemblyPath, FileMode.Open, FileAccess.Read))
-						GetDotNetInfo(stream, out is64Bit, out version);
-					if (is64Bit)
-						newLoaderName = version.StartsWith("v4") ? "Tool.Loader.CLR40.x64.exe" : "Tool.Loader.CLR20.x64.exe";
-					else
-						newLoaderName = version.StartsWith("v4") ? "Tool.Loader.CLR40.x86.exe" : "Tool.Loader.CLR20.x86.exe";
+						GetDotNetInfo(stream, out is64BitTargetAssembly, out versionTargetAssembly);
+					use64Bit = is64BitTargetTool || is64BitTargetAssembly;
+					useClr4x = versionTargetTool.StartsWith("v4", StringComparison.Ordinal) || versionTargetAssembly.StartsWith("v4", StringComparison.Ordinal);
+					loaderName = $"Tool.Loader.{(useClr4x ? "CLR40" : "CLR20")}.{(use64Bit ? "x64" : "x86")}.exe";
 				}
 				catch {
-					Console.WriteLine("Error occured on getting target assembly target framework version.");
-					newLoaderName = "Tool.Loader.CLR40.x86.exe";
+					Console.WriteLine("Error occured on determining the exact loader.");
+					loaderName = "Tool.Loader.CLR40.x86.exe";
 				}
-			Console.WriteLine("Using loader: " + newLoaderName);
+			Console.WriteLine("Using loader: " + loaderName);
 			Console.WriteLine();
-			startInfo = new ProcessStartInfo(newLoaderName, GetArgument(Environment.CommandLine)) {
+			startInfo = new ProcessStartInfo(loaderName, GetArgument(Environment.CommandLine)) {
 				CreateNoWindow = false,
 				UseShellExecute = false
 			};
@@ -74,14 +79,6 @@ namespace Tool.Loader.Auto {
 			}) {
 				process.Start();
 				process.WaitForExit();
-			}
-			if (IsN00bUser() || Debugger.IsAttached) {
-				Console.WriteLine("Press any key to exit...");
-				try {
-					Console.ReadKey(true);
-				}
-				catch {
-				}
 			}
 		}
 
@@ -93,27 +90,6 @@ namespace Tool.Loader.Auto {
 			hasQuote = commandLine[0] == '"';
 			startIndex = hasQuote ? (commandLine.IndexOf('"', 1) + 1) : commandLine.IndexOf(' ');
 			return commandLine.Substring(startIndex).Trim();
-		}
-
-		private static bool IsN00bUser() {
-			if (HasEnv("VisualStudioDir"))
-				return false;
-			if (HasEnv("SHELL"))
-				return false;
-			return HasEnv("windir") && !HasEnv("PROMPT");
-		}
-
-		private static bool HasEnv(string name) {
-			foreach (object key in Environment.GetEnvironmentVariables().Keys) {
-				string env;
-
-				env = key as string;
-				if (env == null)
-					continue;
-				if (string.Equals(env, name, StringComparison.OrdinalIgnoreCase))
-					return true;
-			}
-			return false;
 		}
 
 		private static void GetDotNetInfo(Stream stream, out bool is64Bit, out string version) {
