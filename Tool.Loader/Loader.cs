@@ -52,7 +52,7 @@ namespace Tool.Loader {
 				toolArguments[i] = args[i + 1];
 			invokeParameters = new object[] { toolArguments, null };
 			if ((bool)typeof(CommandLine).GetMethod("TryParse").MakeGenericMethod(toolSettingsType).Invoke(null, invokeParameters))
-				tool.GetType().GetMethod("Execute").Invoke(tool, new object[] { invokeParameters[1] });
+				tool.GetType().GetMethod("Execute", BindingFlags.Public | BindingFlags.Instance, null, new Type[] { toolSettingsType }, null).Invoke(tool, new object[] { invokeParameters[1] });
 			else {
 				Console.Error.WriteLine("Unknown command or invalid arguments.");
 				typeof(CommandLine).GetMethod("ShowUsage").MakeGenericMethod(toolSettingsType).Invoke(null, null);
