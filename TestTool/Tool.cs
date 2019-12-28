@@ -12,7 +12,9 @@ namespace TestTool {
 			Console.WriteLine(separator);
 			Console.WriteLine(settings.AssemblyPath);
 			Console.WriteLine(separator);
+			Console.WriteLine("Exception test");
 			Console.ReadKey(true);
+			throw new ApplicationException("test");
 		}
 	}
 }

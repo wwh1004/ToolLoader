@@ -14,6 +14,8 @@ namespace Tool.Loader {
 		[DllImport("kernel32.dll", BestFitMapping = false, CharSet = CharSet.Unicode, SetLastError = true)]
 		private static extern void* LocalFree(void* hMem);
 
+		private static readonly Action<Exception> _preserveStackTrace = GetPreserveStackTrace();
+
 		public static void Execute(string[] args) {
 			string toolPath;
 			object tool;
@@ -52,7 +54,13 @@ namespace Tool.Loader {
 				toolArguments[i] = args[i + 1];
 			invokeParameters = new object[] { toolArguments, null };
 			if ((bool)typeof(CommandLine).GetMethod("TryParse").MakeGenericMethod(toolSettingsType).Invoke(null, invokeParameters))
-				tool.GetType().GetMethod("Execute", BindingFlags.Public | BindingFlags.Instance, null, new Type[] { toolSettingsType }, null).Invoke(tool, new object[] { invokeParameters[1] });
+				try {
+					tool.GetType().GetMethod("Execute", BindingFlags.Public | BindingFlags.Instance, null, new Type[] { toolSettingsType }, null).Invoke(tool, new object[] { invokeParameters[1] });
+				}
+				catch (TargetInvocationException ex) {
+					_preserveStackTrace(ex.InnerException);
+					throw ex.InnerException;
+				}
 			else {
 				Console.Error.WriteLine("Unknown command or invalid arguments.");
 				typeof(CommandLine).GetMethod("ShowUsage").MakeGenericMethod(toolSettingsType).Invoke(null, null);
@@ -141,6 +149,15 @@ namespace Tool.Loader {
 					return true;
 			}
 			return false;
+		}
+
+		private static Action<Exception> GetPreserveStackTrace() {
+			MethodInfo methodInfo;
+			Action<Exception> preserveStackTrace;
+
+			methodInfo = typeof(Exception).GetMethod("InternalPreserveStackTrace", BindingFlags.Instance | BindingFlags.NonPublic);
+			preserveStackTrace = (Action<Exception>)Delegate.CreateDelegate(typeof(Action<Exception>), methodInfo);
+			return preserveStackTrace;
 		}
 	}
 }
