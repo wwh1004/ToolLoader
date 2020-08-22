@@ -9,7 +9,7 @@ using System.Text;
 
 namespace Tool.Loader {
 	internal static unsafe class Loader {
-		public const uint PAGE_EXECUTE_READWRITE = 0x40;
+		private const uint PAGE_EXECUTE_READWRITE = 0x40;
 
 		[DllImport("shell32.dll", BestFitMapping = false, CharSet = CharSet.Unicode, SetLastError = true)]
 		private static extern char** CommandLineToArgv(string lpCmdLine, int* pNumArgs);
@@ -21,12 +21,6 @@ namespace Tool.Loader {
 		private static extern bool VirtualProtect(void* lpAddress, uint dwSize, uint flNewProtect, out uint lpflOldProtect);
 
 		public static void Execute(string[] args) {
-			string toolPath;
-			object tool;
-			Type toolSettingsType;
-			string[] toolArguments;
-			object[] invokeParameters;
-
 			try {
 				Console.Title = GetTitle();
 			}
@@ -34,9 +28,7 @@ namespace Tool.Loader {
 			}
 			if (args == null || args.Length == 0) {
 				// 直接运行加载器或调试时使用
-				StringBuilder commandLine;
-
-				commandLine = new StringBuilder();
+				var commandLine = new StringBuilder();
 				Console.WriteLine("Specify tool path:");
 				commandLine.Append(Console.ReadLine());
 				Console.WriteLine("Specify arguments:");
@@ -46,29 +38,24 @@ namespace Tool.Loader {
 				Execute(CommandLineToArgs(commandLine.ToString()));
 				return;
 			}
-			toolPath = args[0];
-			tool = CreateToolInstance(Assembly.LoadFile(Path.GetFullPath(toolPath)), out toolSettingsType);
+			string toolPath = args[0];
+			object tool = CreateToolInstance(Assembly.LoadFile(Path.GetFullPath(toolPath)), out var toolSettingsType);
 			try {
 				Console.Title = (string)tool.GetType().GetProperty("Title").GetValue(tool, null);
 			}
 			catch {
 			}
-			toolArguments = new string[args.Length - 1];
+			string[] toolArguments = new string[args.Length - 1];
 			for (int i = 0; i < toolArguments.Length; i++)
 				toolArguments[i] = args[i + 1];
-			invokeParameters = new object[] { toolArguments, null };
+			object[] invokeParameters = new object[] { toolArguments, null };
 			if ((bool)typeof(CommandLine).GetMethod("TryParse").MakeGenericMethod(toolSettingsType).Invoke(null, invokeParameters)) {
-				MethodInfo executeStub;
-				MethodInfo realExecute;
-				byte* address;
-				byte* target;
-
-				executeStub = typeof(Loader).GetMethod("ExecuteStub", BindingFlags.NonPublic | BindingFlags.Static);
-				realExecute = tool.GetType().GetMethod("Execute", BindingFlags.Public | BindingFlags.Instance, null, new Type[] { toolSettingsType }, null);
+				var executeStub = typeof(Loader).GetMethod("ExecuteStub", BindingFlags.NonPublic | BindingFlags.Static);
+				var realExecute = tool.GetType().GetMethod("Execute", BindingFlags.Public | BindingFlags.Instance, null, new Type[] { toolSettingsType }, null);
 				RuntimeHelpers.PrepareMethod(executeStub.MethodHandle);
 				RuntimeHelpers.PrepareMethod(realExecute.MethodHandle);
-				address = GetLastJmpAddress((byte*)executeStub.MethodHandle.GetFunctionPointer());
-				target = GetLastJmpAddress((byte*)realExecute.MethodHandle.GetFunctionPointer());
+				byte* address = GetLastJmpAddress((byte*)executeStub.MethodHandle.GetFunctionPointer());
+				byte* target = GetLastJmpAddress((byte*)realExecute.MethodHandle.GetFunctionPointer());
 				WriteJmp(address, target);
 				ExecuteStub(tool, invokeParameters[1]);
 			}
@@ -87,19 +74,12 @@ namespace Tool.Loader {
 		}
 
 		private static string GetTitle() {
-			string productName;
-			string version;
-			string copyright;
-			int firstBlankIndex;
-			string copyrightOwnerName;
-			string copyrightYear;
-
-			productName = GetAssemblyAttribute<AssemblyProductAttribute>().Product;
-			version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
-			copyright = GetAssemblyAttribute<AssemblyCopyrightAttribute>().Copyright.Substring(12);
-			firstBlankIndex = copyright.IndexOf(' ');
-			copyrightOwnerName = copyright.Substring(firstBlankIndex + 1);
-			copyrightYear = copyright.Substring(0, firstBlankIndex);
+			string productName = GetAssemblyAttribute<AssemblyProductAttribute>().Product;
+			string version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+			string copyright = GetAssemblyAttribute<AssemblyCopyrightAttribute>().Copyright.Substring(12);
+			int firstBlankIndex = copyright.IndexOf(' ');
+			string copyrightOwnerName = copyright.Substring(firstBlankIndex + 1);
+			string copyrightYear = copyright.Substring(0, firstBlankIndex);
 			return $"{productName} v{version} by {copyrightOwnerName} {copyrightYear}";
 		}
 
@@ -108,14 +88,11 @@ namespace Tool.Loader {
 		}
 
 		private static string[] CommandLineToArgs(string commandLine) {
-			char** pArgs;
 			int length;
-			string[] args;
-
-			pArgs = CommandLineToArgv(commandLine, &length);
+			char** pArgs = CommandLineToArgv(commandLine, &length);
 			if (pArgs == null)
 				return null;
-			args = new string[length];
+			string[] args = new string[length];
 			for (int i = 0; i < length; i++)
 				args[i] = new string(pArgs[i]);
 			LocalFree(pArgs);
@@ -123,14 +100,10 @@ namespace Tool.Loader {
 		}
 
 		private static object CreateToolInstance(Assembly assembly, out Type toolSettingsType) {
-			Type genericToolType;
-
-			genericToolType = typeof(ArgumentAttribute).Module.GetType("Tool.Interface.ITool`1");
-			foreach (Type type in assembly.ManifestModule.GetTypes())
-				foreach (Type interfaceType in type.GetInterfaces()) {
-					Type[] genericArguments;
-
-					genericArguments = interfaceType.GetGenericArguments();
+			var genericToolType = typeof(ArgumentAttribute).Module.GetType("Tool.Interface.ITool`1");
+			foreach (var type in assembly.ManifestModule.GetTypes()) {
+				foreach (var interfaceType in type.GetInterfaces()) {
+					var genericArguments = interfaceType.GetGenericArguments();
 					if (!interfaceType.IsGenericType || genericArguments.Length != 1)
 						continue;
 					if (interfaceType.IsAssignableFrom(genericToolType.MakeGenericType(genericArguments[0]))) {
@@ -138,31 +111,15 @@ namespace Tool.Loader {
 						return Activator.CreateInstance(type);
 					}
 				}
+			}
 			throw new InvalidOperationException();
 		}
 
+		[MethodImpl(MethodImplOptions.NoInlining)]
+#pragma warning disable IDE0060 // Remove unused parameter
 		private static void ExecuteStub(object @this, object settings) {
-			Console.WriteLine("allocate memory");
-			Console.WriteLine("allocate memory");
-			Console.WriteLine("allocate memory");
-			Console.WriteLine("allocate memory");
-			Console.WriteLine("allocate memory");
-			Console.WriteLine("allocate memory");
-			Console.WriteLine("allocate memory");
-			Console.WriteLine("allocate memory");
-			Console.WriteLine("allocate memory");
-			Console.WriteLine("allocate memory");
-			try {
-				Console.WriteLine("no inline");
-			}
-			catch {
-			}
-			try {
-				Console.WriteLine("no inline");
-			}
-			catch {
-			}
-			throw new InvalidOperationException();
+#pragma warning restore IDE0060 // Remove unused parameter
+			throw new Exception("ExecuteStub");
 		}
 
 		private static byte* GetLastJmpAddress(byte* pFirstJmp) {
@@ -171,8 +128,7 @@ namespace Tool.Loader {
 
 		private static void WriteJmp(void* address, void* target) {
 			byte[] jmpStub;
-
-			if (IntPtr.Size == 4) {
+			if (sizeof(void*) == 4) {
 				jmpStub = new byte[] {
 					0xE9, 0x00, 0x00, 0x00, 0x00
 				};
@@ -192,11 +148,9 @@ namespace Tool.Loader {
 		}
 
 		private static void Write(void* address, byte[] value) {
-			uint oldProtection;
-
-			VirtualProtect(address, (uint)value.Length, PAGE_EXECUTE_READWRITE, out oldProtection);
+			VirtualProtect(address, (uint)value.Length, PAGE_EXECUTE_READWRITE, out uint oldProtection);
 			Marshal.Copy(value, 0, (IntPtr)address, value.Length);
-			VirtualProtect(address, (uint)value.Length, oldProtection, out oldProtection);
+			VirtualProtect(address, (uint)value.Length, oldProtection, out _);
 		}
 
 		private static bool IsN00bUser() {
@@ -209,10 +163,7 @@ namespace Tool.Loader {
 
 		private static bool HasEnv(string name) {
 			foreach (object key in Environment.GetEnvironmentVariables().Keys) {
-				string env;
-
-				env = key as string;
-				if (env == null)
+				if (!(key is string env))
 					continue;
 				if (string.Equals(env, name, StringComparison.OrdinalIgnoreCase))
 					return true;
