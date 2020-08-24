@@ -1,12 +1,13 @@
 <Project>
 	<PropertyGroup>
 		<Title>$(ProjectName)</Title>
-		<Version>2.2.5.0</Version>
+		<Version>2.2.5.1</Version>
 		<Copyright>Copyright © 2018-2020 Wwh</Copyright>
 	</PropertyGroup>
 	<PropertyGroup>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<LangVersion>7.3</LangVersion>
+		<OutputType>Exe</OutputType>
 		<OutputPath>..\bin\$(Configuration)</OutputPath>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 	</PropertyGroup>

@@ -1,18 +1,18 @@
 namespace Tool.Interface {
 	/// <summary>
-	/// 工具接口
+	/// Tool interface
 	/// </summary>
 	/// <typeparam name="TToolSettings"></typeparam>
 	public interface ITool<TToolSettings> where TToolSettings : new() {
 		/// <summary>
-		/// 显示在控制台上的标题
+		/// Returns tool title
 		/// </summary>
 		string Title { get; }
 
 		/// <summary>
-		/// 执行
+		/// Executes current tool
 		/// </summary>
-		/// <param name="settings">设置</param>
+		/// <param name="settings">Tool settings</param>
 		void Execute(TToolSettings settings);
 	}
 }
