@@ -1,4 +1,5 @@
 using System;
+using Tool;
 using Tool.Interface;
 
 namespace TestTool {
@@ -6,13 +7,14 @@ namespace TestTool {
 		public string Title => "Test";
 
 		public void Execute(ToolSettings settings) {
-			string separator;
-
-			separator = new string('*', settings.AssemblyPath.Length);
-			Console.WriteLine(separator);
-			Console.WriteLine(settings.AssemblyPath);
-			Console.WriteLine(separator);
-			Console.WriteLine("Exception test");
+			Logger.Initialize(false);
+			string separator = new string('*', settings.AssemblyPath.Length);
+			Logger.LogInfo(separator);
+			Logger.LogInfo(settings.AssemblyPath);
+			Logger.LogInfo(separator);
+			Logger.LogInfo("Exception test");
+			Logger.LogException(new ApplicationException("test"));
+			Logger.Flush();
 			Console.ReadKey(true);
 			throw new ApplicationException("test");
 		}

@@ -6,12 +6,10 @@ namespace TestTool {
 	internal sealed class ToolSettings {
 		private string _assemblyPath;
 
-#pragma warning disable IDE0051
-		[Argument("-f", IsRequired = true, Type = "FILE", Description = "程序集路径")]
-		private string AssemblyPathCliSetter {
+		[Argument("-f", IsRequired = true, Type = "FILE", Description = "Assembly path")]
+		internal string AssemblyPathCliSetter {
 			set => AssemblyPath = value;
 		}
-#pragma warning restore IDE0051
 
 		public string AssemblyPath {
 			get => _assemblyPath;
