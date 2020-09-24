@@ -26,7 +26,7 @@ namespace Tool.Loader {
 			}
 			catch {
 			}
-			if (args == null || args.Length == 0) {
+			if (args is null || args.Length == 0) {
 				// 直接运行加载器或调试时使用
 				var commandLine = new StringBuilder();
 				Console.WriteLine("Specify tool path:");

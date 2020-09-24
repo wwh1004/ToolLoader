@@ -23,7 +23,7 @@ namespace Tool.Loader.Auto {
 		}
 
 		private static void Main(string[] args) {
-			if (args == null || args.Length == 0)
+			if (args is null || args.Length == 0)
 				return;
 
 			bool lastIsF = false;
