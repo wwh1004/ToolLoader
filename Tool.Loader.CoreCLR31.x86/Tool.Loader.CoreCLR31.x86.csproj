@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFramework>net35</TargetFramework>
+		<TargetFramework>netcoreapp3.1</TargetFramework>
 		<PlatformTarget>x86</PlatformTarget>
 	</PropertyGroup>
-	<Import Project="..\Tool.Loader\Tool.Loader.CLR.props" />
+	<Import Project="..\Tool.Loader\Tool.Loader.CoreCLR.props" />
 	<ItemGroup>
 		<ProjectReference Include="..\Tool.Interface\Tool.Interface.csproj" />
 	</ItemGroup>

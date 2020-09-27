@@ -3,19 +3,27 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.28527.54
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tool.Interface", "Tool.Interface\Tool.Interface.csproj", "{7E415A01-2335-4068-9378-D0D8E9E2E8CC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tool.Interface", "Tool.Interface\Tool.Interface.csproj", "{7E415A01-2335-4068-9378-D0D8E9E2E8CC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tool.Loader.CLR20.x86", "Tool.Loader.CLR20.x86\Tool.Loader.CLR20.x86.csproj", "{64A8FC2C-2D53-4C85-ADAA-805F2C3BFD48}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tool.Loader.CLR20.x86", "Tool.Loader.CLR20.x86\Tool.Loader.CLR20.x86.csproj", "{64A8FC2C-2D53-4C85-ADAA-805F2C3BFD48}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tool.Loader.CLR20.x64", "Tool.Loader.CLR20.x64\Tool.Loader.CLR20.x64.csproj", "{9AE7A3EB-2FD1-4144-B7B9-9629452662A0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tool.Loader.CLR20.x64", "Tool.Loader.CLR20.x64\Tool.Loader.CLR20.x64.csproj", "{9AE7A3EB-2FD1-4144-B7B9-9629452662A0}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tool.Loader.CLR40.x86", "Tool.Loader.CLR40.x86\Tool.Loader.CLR40.x86.csproj", "{84390A42-92A0-4052-A9C8-A6E37548636D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tool.Loader.CLR40.x64", "Tool.Loader.CLR40.x64\Tool.Loader.CLR40.x64.csproj", "{12C8F9CB-5CBB-416A-B59C-44675D102FC2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tool.Loader.CLR40.x64", "Tool.Loader.CLR40.x64\Tool.Loader.CLR40.x64.csproj", "{12C8F9CB-5CBB-416A-B59C-44675D102FC2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestTool", "TestTool\TestTool.csproj", "{4E6317A1-8467-415A-A4FA-B1341A7D73A3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestTool", "TestTool\TestTool.csproj", "{4E6317A1-8467-415A-A4FA-B1341A7D73A3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tool.Loader.Auto", "Tool.Loader.Auto\Tool.Loader.Auto.csproj", "{A98D2096-ED8D-4F8D-B54B-F61BCB9B6365}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tool.Loader.Auto", "Tool.Loader.Auto\Tool.Loader.Auto.csproj", "{A98D2096-ED8D-4F8D-B54B-F61BCB9B6365}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tool.Loader.CoreCLR31.x64", "Tool.Loader.CoreCLR31.x64\Tool.Loader.CoreCLR31.x64.csproj", "{843ABD26-D54A-4394-9A7E-DEB69B35A99D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tool.Loader.CoreCLR31.x86", "Tool.Loader.CoreCLR31.x86\Tool.Loader.CoreCLR31.x86.csproj", "{72B9EEB1-0E41-44A8-A92A-FE3CA1EDFB0D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tool.Loader.CoreCLR21.x64", "Tool.Loader.CoreCLR21.x64\Tool.Loader.CoreCLR21.x64.csproj", "{6351B2EE-A651-4B07-89E3-77B3EFBE4B8D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tool.Loader.CoreCLR21.x86", "Tool.Loader.CoreCLR21.x86\Tool.Loader.CoreCLR21.x86.csproj", "{9F7D25BE-F402-479C-A075-145A4F452B84}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,6 +59,22 @@ Global
 		{A98D2096-ED8D-4F8D-B54B-F61BCB9B6365}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A98D2096-ED8D-4F8D-B54B-F61BCB9B6365}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A98D2096-ED8D-4F8D-B54B-F61BCB9B6365}.Release|Any CPU.Build.0 = Release|Any CPU
+		{843ABD26-D54A-4394-9A7E-DEB69B35A99D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{843ABD26-D54A-4394-9A7E-DEB69B35A99D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{843ABD26-D54A-4394-9A7E-DEB69B35A99D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{843ABD26-D54A-4394-9A7E-DEB69B35A99D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{72B9EEB1-0E41-44A8-A92A-FE3CA1EDFB0D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{72B9EEB1-0E41-44A8-A92A-FE3CA1EDFB0D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{72B9EEB1-0E41-44A8-A92A-FE3CA1EDFB0D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{72B9EEB1-0E41-44A8-A92A-FE3CA1EDFB0D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6351B2EE-A651-4B07-89E3-77B3EFBE4B8D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6351B2EE-A651-4B07-89E3-77B3EFBE4B8D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6351B2EE-A651-4B07-89E3-77B3EFBE4B8D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6351B2EE-A651-4B07-89E3-77B3EFBE4B8D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9F7D25BE-F402-479C-A075-145A4F452B84}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9F7D25BE-F402-479C-A075-145A4F452B84}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9F7D25BE-F402-479C-A075-145A4F452B84}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9F7D25BE-F402-479C-A075-145A4F452B84}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

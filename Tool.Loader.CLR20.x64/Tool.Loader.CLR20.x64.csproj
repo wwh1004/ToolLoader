@@ -3,7 +3,7 @@
 		<TargetFramework>net35</TargetFramework>
 		<PlatformTarget>x64</PlatformTarget>
 	</PropertyGroup>
-	<Import Project="..\Tool.Loader\Tool.Loader.props" />
+	<Import Project="..\Tool.Loader\Tool.Loader.CLR.props" />
 	<ItemGroup>
 		<ProjectReference Include="..\Tool.Interface\Tool.Interface.csproj" />
 	</ItemGroup>

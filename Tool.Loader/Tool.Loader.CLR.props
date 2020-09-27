@@ -1,0 +1,6 @@
+<Project>
+	<Import Project="..\Tool.Loader\Tool.Loader.props" />
+	<ItemGroup>
+		<Compile Include="..\Tool.Loader\Loader.CLR.cs" />
+	</ItemGroup>
+</Project>

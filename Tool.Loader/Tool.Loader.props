@@ -1,7 +1,7 @@
 <Project>
 	<PropertyGroup>
 		<Title>$(ProjectName)</Title>
-		<Version>2.2.5.1</Version>
+		<Version>2.2.6.0</Version>
 		<Copyright>Copyright © 2018-2020 Wwh</Copyright>
 	</PropertyGroup>
 	<PropertyGroup>
@@ -12,6 +12,6 @@
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 	</PropertyGroup>
 	<ItemGroup>
-		<Compile Include="..\Tool.Loader\*.cs" />
+		<Compile Include="..\Tool.Loader\CommandLine.cs" />
 	</ItemGroup>
 </Project>
