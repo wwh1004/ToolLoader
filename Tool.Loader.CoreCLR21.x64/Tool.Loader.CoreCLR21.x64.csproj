@@ -2,6 +2,7 @@
 	<PropertyGroup>
 		<TargetFramework>netcoreapp2.1</TargetFramework>
 		<PlatformTarget>x64</PlatformTarget>
+		<DefineConstants>NETCORE21</DefineConstants>
 	</PropertyGroup>
 	<Import Project="..\Tool.Loader\Tool.Loader.CoreCLR.props" />
 	<ItemGroup>

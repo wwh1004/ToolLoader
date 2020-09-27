@@ -23,8 +23,12 @@ namespace Tool.Loader {
 		[DllImport("kernel32.dll", BestFitMapping = false, CharSet = CharSet.Unicode, SetLastError = true)]
 		private static extern bool VirtualProtect(void* lpAddress, uint dwSize, uint flNewProtect, out uint lpflOldProtect);
 
+#if !NETCORE21
 		private static AssemblyDependencyResolver _dependencyResolver;
 		private static HashSet<string> _resolvingAssemblies;
+#else
+		private static HashSet<string> _resolvingAssemblies;
+#endif
 
 		public static void Execute(string[] args) {
 			try {
@@ -45,10 +49,15 @@ namespace Tool.Loader {
 				return;
 			}
 			string toolPath = Path.GetFullPath(args[0]);
+#if !NETCORE21
 			_dependencyResolver = new AssemblyDependencyResolver(toolPath);
 			_resolvingAssemblies = new HashSet<string>();
 			AssemblyLoadContext.Default.Resolving += ResolveAssembly;
 			AssemblyLoadContext.Default.ResolvingUnmanagedDll += ResolveUnmanagedDll;
+#else
+			_resolvingAssemblies = new HashSet<string>();
+			AssemblyLoadContext.Default.Resolving += ResolveAssembly;
+#endif
 			object tool = CreateToolInstance(AssemblyLoadContext.Default.LoadFromAssemblyPath(toolPath), out var toolSettingsType);
 			try {
 				Console.Title = (string)tool.GetType().GetProperty("Title").GetValue(tool, null);
@@ -83,6 +92,7 @@ namespace Tool.Loader {
 			}
 		}
 
+#if !NETCORE21
 		private static Assembly ResolveAssembly(AssemblyLoadContext loadContext, AssemblyName assemblyName) {
 			try {
 				if (!_resolvingAssemblies.Add(assemblyName.FullName))
@@ -105,6 +115,23 @@ namespace Tool.Loader {
 				return IntPtr.Zero;
 			throw new NotImplementedException($"Can't load {unmanagedDllName}");
 		}
+#else
+		private static Assembly ResolveAssembly(AssemblyLoadContext loadContext, AssemblyName assemblyName) {
+			try {
+				if (!_resolvingAssemblies.Add(assemblyName.FullName))
+					return null;
+				var assembly = loadContext.LoadFromAssemblyName(assemblyName);
+				_resolvingAssemblies.Remove(assemblyName.FullName);
+				return assembly;
+			}
+			catch {
+				string assemblyPath = Path.Combine(Environment.CurrentDirectory, assemblyName.Name + ".dll");
+				if (!File.Exists(assemblyPath))
+					return null;
+				return loadContext.LoadFromAssemblyPath(assemblyPath);
+			}
+		}
+#endif
 
 		private static string GetTitle() {
 			string productName = GetAssemblyAttribute<AssemblyProductAttribute>().Product;
@@ -149,9 +176,8 @@ namespace Tool.Loader {
 		}
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
-#pragma warning disable IDE0060 // Remove unused parameter
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0060:Remove unused parameter", Justification = "<Pending>")]
 		private static void ExecuteStub(object @this, object settings) {
-#pragma warning restore IDE0060 // Remove unused parameter
 			throw new Exception("ExecuteStub");
 		}
 

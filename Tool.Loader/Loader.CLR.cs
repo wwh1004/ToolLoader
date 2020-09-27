@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using Tool.Interface;
 
 namespace Tool.Loader {
 	internal static unsafe class Loader {
@@ -100,25 +101,24 @@ namespace Tool.Loader {
 		}
 
 		private static object CreateToolInstance(Assembly assembly, out Type toolSettingsType) {
-			var genericToolType = typeof(ArgumentAttribute).Module.GetType("Tool.Interface.ITool`1");
+			var toolTypeGenericDefinition = typeof(ITool<>);
 			foreach (var type in assembly.ManifestModule.GetTypes()) {
 				foreach (var interfaceType in type.GetInterfaces()) {
-					var genericArguments = interfaceType.GetGenericArguments();
-					if (!interfaceType.IsGenericType || genericArguments.Length != 1)
+					if (!interfaceType.IsGenericType || interfaceType.GetGenericTypeDefinition() != toolTypeGenericDefinition)
 						continue;
-					if (interfaceType.IsAssignableFrom(genericToolType.MakeGenericType(genericArguments[0]))) {
-						toolSettingsType = genericArguments[0];
-						return Activator.CreateInstance(type);
-					}
+					var genericArguments = interfaceType.GetGenericArguments();
+					if (genericArguments.Length != 1)
+						continue;
+					toolSettingsType = genericArguments[0];
+					return Activator.CreateInstance(type);
 				}
 			}
-			throw new InvalidOperationException();
+			throw new InvalidOperationException("Tool type not found");
 		}
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
-#pragma warning disable IDE0060 // Remove unused parameter
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0060:Remove unused parameter", Justification = "<Pending>")]
 		private static void ExecuteStub(object @this, object settings) {
-#pragma warning restore IDE0060 // Remove unused parameter
 			throw new Exception("ExecuteStub");
 		}
 
