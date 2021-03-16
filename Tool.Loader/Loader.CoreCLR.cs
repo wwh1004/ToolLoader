@@ -3,6 +3,7 @@ using System.Cli;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -58,7 +59,7 @@ namespace Tool.Loader {
 			_resolvingAssemblies = new HashSet<string>();
 			AssemblyLoadContext.Default.Resolving += ResolveAssembly;
 #endif
-			object tool = CreateToolInstance(AssemblyLoadContext.Default.LoadFromAssemblyPath(toolPath), out var toolSettingsType);
+			object tool = CreateToolInstance(GetOrLoadAssembly(toolPath), out var toolSettingsType);
 			try {
 				Console.Title = (string)tool.GetType().GetProperty("Title").GetValue(tool, null);
 			}
@@ -157,6 +158,12 @@ namespace Tool.Loader {
 				args[i] = new string(pArgs[i]);
 			LocalFree(pArgs);
 			return args;
+		}
+
+		private static Assembly GetOrLoadAssembly(string assemblyPath) {
+			string assemblyName = Path.GetFileNameWithoutExtension(assemblyPath);
+			var assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(t => string.Equals(t.GetName().Name, assemblyName, StringComparison.OrdinalIgnoreCase));
+			return assembly ?? AssemblyLoadContext.Default.LoadFromAssemblyPath(Path.GetFullPath(assemblyPath));
 		}
 
 		private static object CreateToolInstance(Assembly assembly, out Type toolSettingsType) {
