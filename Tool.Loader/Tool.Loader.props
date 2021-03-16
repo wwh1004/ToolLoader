@@ -2,7 +2,7 @@
 	<PropertyGroup>
 		<Title>$(ProjectName)</Title>
 		<Version>2.2.7.0</Version>
-		<Copyright>Copyright © 2018-2020 Wwh</Copyright>
+		<Copyright>Copyright © 2018-2021 Wwh</Copyright>
 	</PropertyGroup>
 	<PropertyGroup>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
