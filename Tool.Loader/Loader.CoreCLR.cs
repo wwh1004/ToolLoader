@@ -76,7 +76,8 @@ namespace Tool.Loader {
 				RuntimeHelpers.PrepareMethod(realExecute.MethodHandle);
 				byte* address = GetLastJmpAddress((byte*)executeStub.MethodHandle.GetFunctionPointer());
 				byte* target = GetLastJmpAddress((byte*)realExecute.MethodHandle.GetFunctionPointer());
-				WriteJmp(address, target);
+				if (address != target)
+					WriteJmp(address, target);
 				ExecuteStub(tool, invokeParameters[1]);
 			}
 			else {
