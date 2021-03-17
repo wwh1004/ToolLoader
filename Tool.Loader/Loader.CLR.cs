@@ -56,8 +56,8 @@ namespace Tool.Loader {
 				var realExecute = tool.GetType().GetMethod("Execute", BindingFlags.Public | BindingFlags.Instance, null, new Type[] { toolSettingsType }, null);
 				RuntimeHelpers.PrepareMethod(executeStub.MethodHandle);
 				RuntimeHelpers.PrepareMethod(realExecute.MethodHandle);
-				byte* address = GetLastJmpAddress((byte*)executeStub.MethodHandle.GetFunctionPointer());
-				byte* target = GetLastJmpAddress((byte*)realExecute.MethodHandle.GetFunctionPointer());
+				byte* address = (byte*)executeStub.MethodHandle.GetFunctionPointer();
+				byte* target = (byte*)realExecute.MethodHandle.GetFunctionPointer();
 				if (address != target)
 					WriteJmp(address, target);
 				ExecuteStub(tool, invokeParameters[1]);
@@ -130,15 +130,11 @@ namespace Tool.Loader {
 			throw new Exception("ExecuteStub");
 		}
 
-		private static byte* GetLastJmpAddress(byte* pFirstJmp) {
-			return *pFirstJmp == 0xE9 ? GetLastJmpAddress(pFirstJmp + 5 + *(int*)(pFirstJmp + 1)) : pFirstJmp;
-		}
-
 		private static void WriteJmp(void* address, void* target) {
 			byte[] jmpStub;
 			if (sizeof(void*) == 4) {
 				jmpStub = new byte[] {
-					0xE9, 0x00, 0x00, 0x00, 0x00
+					0xE9, 0x00, 0x00, 0x00, 0x00 // jmp rel
 				};
 				fixed (byte* p = jmpStub)
 					*(int*)(p + 1) = (int)target - (int)address - 5;
