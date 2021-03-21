@@ -1,5 +1,8 @@
 <Project>
 	<Import Project="..\Tool.Loader\Tool.Loader.props" />
+	<PropertyGroup>
+		<AppConfig>..\Tool.Loader\App.CLR.config</AppConfig>
+	</PropertyGroup>
 	<ItemGroup>
 		<Compile Include="..\Tool.Loader\Loader.CLR.cs" />
 	</ItemGroup>

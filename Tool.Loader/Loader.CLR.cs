@@ -63,7 +63,6 @@ namespace Tool.Loader {
 				ExecuteStub(tool, invokeParameters[1]);
 			}
 			else {
-				Console.Error.WriteLine("Unknown command or invalid arguments.");
 				typeof(CommandLine).GetMethod("ShowUsage").MakeGenericMethod(toolSettingsType).Invoke(null, null);
 			}
 			if (IsN00bUser() || Debugger.IsAttached) {
