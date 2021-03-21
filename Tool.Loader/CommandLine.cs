@@ -6,21 +6,47 @@ using System.Text;
 
 namespace System.Cli {
 	internal static class CommandLine {
-		public static T Parse<T>(string[] args) where T : new() {
+		public static T Parse<T>(string[] args, out bool showUsage) where T : class, new() {
 			if (args is null)
 				throw new ArgumentNullException(nameof(args));
 
-			if (!TryParse(args, out T result))
-				throw new FormatException($"Invalid {nameof(args)} or generic parameter {nameof(T)}");
+			if (!TryParse(args, out T result, out showUsage))
+				throw new FormatException($"Invalid {nameof(args)} or generic argument {typeof(T)}");
+			if (showUsage && !ShowUsage<T>())
+				throw new FormatException($"Can't generate usage for {typeof(T)}");
 			return result;
 		}
 
-		public static bool TryParse<T>(string[] args, out T result) where T : new() {
-			if (args is null)
+		public static bool TryParse<T>(string[] args, out T result, out bool showUsage) where T : class, new() {
+			if (args is null) {
+				Console.WriteLine($"Parameter '{nameof(args)}' is null");
 				goto fail;
+			}
+			if (args.Any(t => string.IsNullOrEmpty(t))) {
+				Console.WriteLine($"Contains arg in '{nameof(args)}' is null");
+				goto fail;
+			}
+			if (!TryGetOptionInfos(typeof(T), out var optionInfos, out var defaultOptionInfo)) {
+				goto fail;
+			}
 
-			if (!TryGetOptionInfos(typeof(T), out var optionInfos, out var defaultOptionInfo))
-				goto fail;
+			showUsage = false;
+			for (int i = 0; i < args.Length; i++) {
+				string arg = args[i].Trim();
+				if (arg.StartsWith("-", StringComparison.Ordinal))
+					arg = arg.TrimStart('-');
+				else if (arg.StartsWith("/", StringComparison.Ordinal))
+					arg = arg.Substring(1);
+				else
+					continue;
+
+				if (!string.Equals(arg, "h", StringComparison.OrdinalIgnoreCase) && !string.Equals(arg, "help", StringComparison.OrdinalIgnoreCase))
+					continue;
+
+				result = null;
+				showUsage = true;
+				return true;
+			}
 
 			result = new T();
 			for (int i = 0; i < args.Length; i++) {
@@ -80,7 +106,8 @@ namespace System.Cli {
 			return true;
 
 		fail:
-			result = default;
+			result = null;
+			showUsage = false;
 			return false;
 		}
 
@@ -142,24 +169,25 @@ namespace System.Cli {
 				Console.WriteLine($"Invalid name char '{c}' in {OptionNameOrDefault(option)}");
 				goto fail;
 			}
-			if (option.DefaultValue is null) {
+			object defaultValue = option.DefaultValue;
+			if (defaultValue is null) {
 				return true;
 			}
 			// 下面是默认值检查
 			if (option.IsRequired) {
 				// 有默认值但选项是必选选项
-				Console.WriteLine($"{OptionNameOrDefault(option, true)} is required but has default value '{option.DefaultValue}'");
+				Console.WriteLine($"{OptionNameOrDefault(option, true)} is required but has default value '{defaultValue}'");
 				goto fail;
 			}
 			if (optionType == typeof(bool)) {
 				// 有默认值但选项类型为 bool
-				Console.WriteLine($"Type of {OptionNameOrDefault(option, true)} is '{typeof(bool)}' but option has default value '{option.DefaultValue}'");
+				Console.WriteLine($"Type of {OptionNameOrDefault(option, true)} is '{typeof(bool)}' but option has default value '{defaultValue}'");
 				goto fail;
 			}
-			var defaultValueType = option.DefaultValue.GetType();
+			var defaultValueType = defaultValue.GetType();
 			if (defaultValueType != optionType && defaultValueType != typeof(string)) {
 				// 有默认值但默认值的类型与属性的类型不相同
-				Console.WriteLine($"Type of default value ({option.DefaultValue.GetType()}) is neither same as type of {OptionNameOrDefault(option)} ({optionType}) nor '{typeof(string)}'");
+				Console.WriteLine($"Type of default value ({defaultValueType}) is neither same as type of {OptionNameOrDefault(option)} ({optionType}) nor '{typeof(string)}'");
 				goto fail;
 			}
 			return true;
@@ -239,6 +267,7 @@ namespace System.Cli {
 			int maxTypeNameLength = optionInfos.Max(t => t.Type.Name.Length);
 			int maxDescriptionLength = optionInfos.Max(t => t.Description.Length);
 			var sb = new StringBuilder();
+			sb.AppendLine("Use -h --h /h -help --help /help to show these usage tips.");
 			sb.AppendLine("Options:");
 			foreach (var optionInfo in optionInfos) {
 				sb.Append($"  {optionInfo.DisplayName.PadRight(maxNameLength)}  {optionInfo.Type.Name.PadRight(maxTypeNameLength)}  {optionInfo.Description.PadRight(maxDescriptionLength)}");

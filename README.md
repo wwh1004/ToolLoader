@@ -75,7 +75,7 @@ namespace TestTool {
 	}
 
 	internal sealed class ToolOptions {
-		[Option()]
+		[Option(Description = "A string value, this is default option")]
 		public string DefaultOption { get; set; }
 
 		[Option("-r", IsRequired = true, Description = "A string value")]
@@ -137,10 +137,15 @@ Command:
 Tool.Loader.*.exe <tool-name.dll> <arguments>
 ```
 
+Show usage:
+```
+Tool.Loader.*.exe <tool-name.dll> -h
+```
+
 #### Example:
 Command:
 ```
-TestTool.dll -r TestTool.dll1 Test2 -o EnumA -o2 EnumA,EnumA,EnumB
+Tool.Loader.CLR40.x64.exe TestTool.dll -r TestTool.dll1 Test2 -o EnumA -o2 EnumA,EnumA,EnumB
 ```
 
 Output:
@@ -171,6 +176,23 @@ StackTrace:
 TargetSite:
 Void Execute(TestTool.ToolOptions)
 ----------------------------------------
+
+Press any key to exit...
+```
+
+Show usage:
+```
+Tool.Loader.CLR40.x64.exe TestTool.dll -h
+```
+
+Output:
+```
+Use -h --h /h -help --help /help to show these usage tips.
+Options:
+  -r         String      A string value
+  -o         ToolEnum    An enum value                           (Optional)
+  -o2        ToolEnum[]  Some enum values                        (Optional)
+  <default>  String      A string value, this is default option  (Optional)
 
 Press any key to exit...
 ```

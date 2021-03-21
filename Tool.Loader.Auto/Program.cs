@@ -26,21 +26,11 @@ namespace Tool.Loader.Auto {
 			if (args is null || args.Length == 0)
 				return;
 
-			bool lastIsF = false;
-			string assemblyPath = null;
-			foreach (string arg in args) {
-				if (lastIsF) {
-					assemblyPath = arg;
-					break;
-				}
-				else {
-					if (arg == "-f")
-						lastIsF = true;
-				}
-			}
+
+			string assemblyPath = GetAssemblyPath(args);
 			string loaderName;
 			if (assemblyPath is null) {
-				Console.WriteLine("Not found -f argument.");
+				Console.WriteLine("Assembly path not found.");
 				loaderName = "Tool.Loader.CLR40.x86.exe";
 			}
 			else {
@@ -58,20 +48,59 @@ namespace Tool.Loader.Auto {
 					loaderName = $"Tool.Loader.{(useClr4x ? "CLR40" : "CLR20")}.{(use64Bit ? "x64" : "x86")}.exe";
 				}
 				catch {
-					Console.WriteLine("Error occured on determining the exact loader.");
+					Console.Error.WriteLine("Error occured on determining the exact loader.");
 					loaderName = "Tool.Loader.CLR40.x86.exe";
 				}
 			}
 			Console.WriteLine("Using loader: " + loaderName);
 			Console.WriteLine();
-			using (var process = new Process {
+			using var process = new Process {
 				StartInfo = new ProcessStartInfo(loaderName, GetArgument(Environment.CommandLine)) {
 					CreateNoWindow = false,
 					UseShellExecute = false
 				}
-			}) {
-				process.Start();
-				process.WaitForExit();
+			};
+			process.Start();
+			process.WaitForExit();
+		}
+
+		private static string GetAssemblyPath(string[] args) {
+			string defaultOption = null;
+			string fOption = null;
+			for (int i = 1; i < args.Length; i++) {
+				string arg = args[i];
+				if (MaybeOptionKey(arg)) {
+					// 选项
+					if (i == args.Length - 1)
+						break;
+					// 如果当前是最后一个参数，退出循环，不需要判断了
+					if (MaybeOptionKey(args[i + 1]))
+						continue;
+					// 如果下一个字符串也是选项的key，进入下一次循环
+					if (string.Equals(arg, "-f", StringComparison.OrdinalIgnoreCase) || string.Equals(arg, "/f", StringComparison.OrdinalIgnoreCase))
+						fOption = args[i + 1];
+				}
+				else {
+					// 默认选项
+					defaultOption = arg;
+				}
+			}
+			try {
+				if (!(defaultOption is null) && File.Exists(defaultOption))
+					return defaultOption;
+			}
+			catch {
+			}
+			try {
+				if (!(fOption is null) && File.Exists(fOption))
+					return defaultOption;
+			}
+			catch {
+			}
+			return null;
+
+			static bool MaybeOptionKey(string arg) {
+				return arg.StartsWith("-", StringComparison.Ordinal) || arg.StartsWith("/", StringComparison.Ordinal);
 			}
 		}
 
@@ -84,26 +113,25 @@ namespace Tool.Loader.Auto {
 
 		private static void GetDotNetInfo(Stream stream, out bool is64Bit, out string version) {
 			version = null;
-			using (var reader = new BinaryReader(stream)) {
-				GetPEInfo(reader, out uint peOffset, out is64Bit);
-				reader.BaseStream.Position = peOffset + (is64Bit ? 0xF8 : 0xE8);
-				uint rva = reader.ReadUInt32();
-				if (rva == 0)
-					return;
-				var sectionHeaders = GetSectionHeaders(reader);
-				var sectionHeader = GetSectionHeader(rva, sectionHeaders);
-				if (sectionHeader is null)
-					return;
-				reader.BaseStream.Position = sectionHeader.Value.PointerToRawData + rva - sectionHeader.Value.VirtualAddress + 0x8;
-				rva = reader.ReadUInt32();
-				if (rva == 0)
-					return;
-				sectionHeader = GetSectionHeader(rva, sectionHeaders);
-				if (sectionHeader is null)
-					return;
-				reader.BaseStream.Position = sectionHeader.Value.PointerToRawData + rva - sectionHeader.Value.VirtualAddress + 0xC;
-				version = Encoding.UTF8.GetString(reader.ReadBytes(reader.ReadInt32() - 2));
-			}
+			using var reader = new BinaryReader(stream);
+			GetPEInfo(reader, out uint peOffset, out is64Bit);
+			reader.BaseStream.Position = peOffset + (is64Bit ? 0xF8 : 0xE8);
+			uint rva = reader.ReadUInt32();
+			if (rva == 0)
+				return;
+			var sectionHeaders = GetSectionHeaders(reader);
+			var sectionHeader = GetSectionHeader(rva, sectionHeaders);
+			if (sectionHeader is null)
+				return;
+			reader.BaseStream.Position = sectionHeader.Value.PointerToRawData + rva - sectionHeader.Value.VirtualAddress + 0x8;
+			rva = reader.ReadUInt32();
+			if (rva == 0)
+				return;
+			sectionHeader = GetSectionHeader(rva, sectionHeaders);
+			if (sectionHeader is null)
+				return;
+			reader.BaseStream.Position = sectionHeader.Value.PointerToRawData + rva - sectionHeader.Value.VirtualAddress + 0xC;
+			version = Encoding.UTF8.GetString(reader.ReadBytes(reader.ReadInt32() - 2));
 		}
 
 		private static void GetPEInfo(BinaryReader reader, out uint peOffset, out bool is64Bit) {

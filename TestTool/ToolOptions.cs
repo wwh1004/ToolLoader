@@ -7,7 +7,7 @@ namespace TestTool {
 	}
 
 	internal sealed class ToolOptions {
-		[Option()]
+		[Option(Description = "A string value, this is default option")]
 		public string DefaultOption { get; set; }
 
 		[Option("-r", IsRequired = true, Description = "A string value")]

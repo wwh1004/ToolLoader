@@ -50,8 +50,8 @@ namespace Tool.Loader {
 			string[] toolArguments = new string[args.Length - 1];
 			for (int i = 0; i < toolArguments.Length; i++)
 				toolArguments[i] = args[i + 1];
-			object[] invokeParameters = new object[] { toolArguments, null };
-			if ((bool)typeof(CommandLine).GetMethod("TryParse").MakeGenericMethod(toolSettingsType).Invoke(null, invokeParameters)) {
+			object[] invokeParameters = new object[] { toolArguments, null, null };
+			if ((bool)typeof(CommandLine).GetMethod("TryParse").MakeGenericMethod(toolSettingsType).Invoke(null, invokeParameters) && !(bool)invokeParameters[2]) {
 				var executeStub = typeof(Loader).GetMethod("ExecuteStub", BindingFlags.NonPublic | BindingFlags.Static);
 				var realExecute = tool.GetType().GetMethod("Execute", BindingFlags.Public | BindingFlags.Instance, null, new Type[] { toolSettingsType }, null);
 				RuntimeHelpers.PrepareMethod(executeStub.MethodHandle);
