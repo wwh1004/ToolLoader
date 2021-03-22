@@ -8,7 +8,7 @@ Apply OptionAttribute to property
 #### Attribute
 OptionAttribute.cs:
 ``` cs
-namespace System.Cli {
+namespace System {
 	/// <summary>
 	/// Represents a command line option. The property which <see cref="OptionAttribute"/> is applied to must be an instance property and one of the following types: <see cref="bool"/>, <see cref="char"/>, <see cref="sbyte"/>, <see cref="byte"/>, <see cref="short"/>, <see cref="ushort"/>, <see cref="int"/>, <see cref="uint"/>, <see cref="long"/>, <see cref="ulong"/>, <see cref="float"/>, <see cref="double"/>, <see cref="decimal"/>, <see cref="DateTime"/>, <see cref="string"/>, <see cref="Enum"/> or array of them.
 	/// </summary>
@@ -91,7 +91,7 @@ namespace TestTool {
 	internal sealed class Tool : ITool<ToolOptions> {
 		public string Title => "Test";
 
-		public void Execute(ToolOptions settings) {
+		public void Execute(ToolOptions options) {
 			Logger.Level = LogLevel.Verbose1;
 			Logger.Info($"LogLevel: {Logger.Level}");
 			Logger.Info("Info");
@@ -101,12 +101,12 @@ namespace TestTool {
 			Logger.Verbose2("Verbose2");
 			Logger.Verbose2("Verbose3");
 
-			string separator = new string('*', settings.RequiredOption.Length);
+			string separator = new string('*', options.RequiredOption.Length);
 			Logger.Info(separator);
-			Logger.Info($"DefaultOption: {settings.DefaultOption}");
-			Logger.Info($"RequiredOption: {settings.RequiredOption}");
-			Logger.Info($"OptionalOption: {settings.OptionalOption}");
-			Logger.Info($"OptionalOption2: {string.Join(", ", settings.OptionalOption2)}");
+			Logger.Info($"DefaultOption: {options.DefaultOption}");
+			Logger.Info($"RequiredOption: {options.RequiredOption}");
+			Logger.Info($"OptionalOption: {options.OptionalOption}");
+			Logger.Info($"OptionalOption2: {string.Join(", ", options.OptionalOption2)}");
 			Logger.Info(separator);
 
 			var lockedLogger = Logger.EnterLock();
@@ -172,7 +172,7 @@ test
 Source:
 TestTool
 StackTrace:
-   at TestTool.Tool.Execute(ToolOptions settings) in D:\Projects\ToolLoader\TestTool\Tool.cs:line 37
+   at TestTool.Tool.Execute(ToolOptions options) in D:\Projects\ToolLoader\TestTool\Tool.cs:line 37
 TargetSite:
 Void Execute(TestTool.ToolOptions)
 ----------------------------------------

@@ -1,4 +1,4 @@
-using System.Cli;
+using System;
 
 namespace TestTool {
 	internal enum ToolEnum {

@@ -1,5 +1,4 @@
 using System;
-using System.Cli;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -59,7 +58,7 @@ namespace Tool.Loader {
 			_resolvingAssemblies = new HashSet<string>();
 			AssemblyLoadContext.Default.Resolving += ResolveAssembly;
 #endif
-			object tool = CreateToolInstance(GetOrLoadAssembly(toolPath), out var toolSettingsType);
+			object tool = CreateToolInstance(GetOrLoadAssembly(toolPath), out var optionsType);
 			try {
 				Console.Title = (string)tool.GetType().GetProperty("Title").GetValue(tool, null);
 			}
@@ -69,9 +68,9 @@ namespace Tool.Loader {
 			for (int i = 0; i < toolArguments.Length; i++)
 				toolArguments[i] = args[i + 1];
 			object[] invokeParameters = new object[] { toolArguments, null };
-			if ((bool)typeof(CommandLine).GetMethod("TryParse").MakeGenericMethod(toolSettingsType).Invoke(null, invokeParameters)) {
+			if ((bool)typeof(CommandLine).GetMethod("TryParse").MakeGenericMethod(optionsType).Invoke(null, invokeParameters)) {
 				var executeStub = typeof(Loader).GetMethod("ExecuteStub", BindingFlags.NonPublic | BindingFlags.Static);
-				var realExecute = tool.GetType().GetMethod("Execute", BindingFlags.Public | BindingFlags.Instance, null, new Type[] { toolSettingsType }, null);
+				var realExecute = tool.GetType().GetMethod("Execute", BindingFlags.Public | BindingFlags.Instance, null, new Type[] { optionsType }, null);
 				RuntimeHelpers.PrepareMethod(executeStub.MethodHandle);
 				RuntimeHelpers.PrepareMethod(realExecute.MethodHandle);
 				byte* address = (byte*)executeStub.MethodHandle.GetFunctionPointer();
@@ -81,7 +80,7 @@ namespace Tool.Loader {
 				ExecuteStub(tool, invokeParameters[1]);
 			}
 			else {
-				typeof(CommandLine).GetMethod("ShowUsage").MakeGenericMethod(toolSettingsType).Invoke(null, null);
+				typeof(CommandLine).GetMethod("ShowUsage").MakeGenericMethod(optionsType).Invoke(null, null);
 			}
 			if (IsN00bUser() || Debugger.IsAttached) {
 				Console.WriteLine("Press any key to exit...");
@@ -166,7 +165,7 @@ namespace Tool.Loader {
 			return assembly ?? AssemblyLoadContext.Default.LoadFromAssemblyPath(Path.GetFullPath(assemblyPath));
 		}
 
-		private static object CreateToolInstance(Assembly assembly, out Type toolSettingsType) {
+		private static object CreateToolInstance(Assembly assembly, out Type optionsType) {
 			var toolTypeGenericDefinition = typeof(ITool<>);
 			foreach (var type in assembly.ManifestModule.GetTypes()) {
 				foreach (var interfaceType in type.GetInterfaces()) {
@@ -175,7 +174,7 @@ namespace Tool.Loader {
 					var genericArguments = interfaceType.GetGenericArguments();
 					if (genericArguments.Length != 1)
 						continue;
-					toolSettingsType = genericArguments[0];
+					optionsType = genericArguments[0];
 					return Activator.CreateInstance(type);
 				}
 			}
@@ -183,8 +182,9 @@ namespace Tool.Loader {
 		}
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
-		[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0060:Remove unused parameter", Justification = "<Pending>")]
-		private static void ExecuteStub(object @this, object settings) {
+#pragma warning disable IDE0060 // Remove unused parameter
+		private static void ExecuteStub(object @this, object options) {
+#pragma warning restore IDE0060 // Remove unused parameter
 			throw new Exception("ExecuteStub");
 		}
 

@@ -69,14 +69,14 @@ namespace Tool.Loader.Auto {
 			string fOption = null;
 			for (int i = 1; i < args.Length; i++) {
 				string arg = args[i];
-				if (MaybeOptionKey(arg)) {
+				if (MaybeOptionName(arg)) {
 					// 选项
 					if (i == args.Length - 1)
 						break;
 					// 如果当前是最后一个参数，退出循环，不需要判断了
-					if (MaybeOptionKey(args[i + 1]))
+					if (MaybeOptionName(args[i + 1]))
 						continue;
-					// 如果下一个字符串也是选项的key，进入下一次循环
+					// 如果下一个字符串也是选项名，进入下一次循环
 					if (string.Equals(arg, "-f", StringComparison.OrdinalIgnoreCase) || string.Equals(arg, "/f", StringComparison.OrdinalIgnoreCase))
 						fOption = args[i + 1];
 				}
@@ -99,7 +99,7 @@ namespace Tool.Loader.Auto {
 			}
 			return null;
 
-			static bool MaybeOptionKey(string arg) {
+			static bool MaybeOptionName(string arg) {
 				return arg.StartsWith("-", StringComparison.Ordinal) || arg.StartsWith("/", StringComparison.Ordinal);
 			}
 		}

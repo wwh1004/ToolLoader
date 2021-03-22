@@ -4,7 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 
-namespace System.Cli {
+namespace System {
 	internal static class CommandLine {
 		public static T Parse<T>(string[] args, out bool showUsage) where T : class, new() {
 			if (args is null)
@@ -52,27 +52,27 @@ namespace System.Cli {
 			for (int i = 0; i < args.Length; i++) {
 				if (!optionInfos.TryGetValue(args[i], out var optionInfo)) {
 					if (!(defaultOptionInfo is null) && !defaultOptionInfo.HasSetValue) {
-						// 默认选项
+						// default option
 						if (!defaultOptionInfo.TrySetValue(result, args[i]))
 							goto fail;
 						continue;
 					}
 					else {
-						// 不是有效选项名
+						// invalid option name
 						Console.WriteLine($"'{args[i]}' is not a valid option");
 						goto fail;
 					}
 				}
 
 				if (optionInfo.IsBoolean) {
-					// 是 bool 类型，所以不需要其它判断，直接赋值 true
+					// bool type, don't need other checks, set true
 					if (!optionInfo.TrySetValue(result, true))
 						goto fail;
 					continue;
 				}
 
 				if (i == args.Length - 1) {
-					// 需要提供值但是到末尾了，未提供值
+					// no value is provided for option
 					Console.WriteLine($"No value is provided for {OptionNameOrDefault(optionInfo.Option)}");
 					goto fail;
 				}
@@ -85,20 +85,20 @@ namespace System.Cli {
 			foreach (var optionInfo in optionInfos.Values) {
 				if (optionInfo.HasSetValue)
 					continue;
-				// 选项已设置值
+				// option value has been set
 
 				if (optionInfo.IsRequired) {
-					// 必选选项
+					// required option
 					Console.WriteLine($"Required {OptionNameOrDefault(optionInfo.Option)} must have a value");
 					goto fail;
 				}
 				else if (optionInfo.IsBoolean) {
-					// bool 选项
+					// bool option
 					if (!optionInfo.TrySetValue(result, false))
 						goto fail;
 				}
 				else {
-					// 可选选项
+					// optional option
 					if (!optionInfo.TrySetValue(result, optionInfo.DefaultValue))
 						goto fail;
 				}
@@ -144,28 +144,28 @@ namespace System.Cli {
 			option = null;
 			object[] options = property.GetCustomAttributes(typeof(OptionAttribute), false);
 			if (options is null || options.Length == 0) {
-				// 排除未应用 OptionAttribute 的属性
+				// exclude properties without OptionAttribute
 				return true;
 			}
 			if (options.Length != 1) {
-				// OptionAttribute 不应该被应用多次
+				// OptionAttribute shouldn't be applied more than one times
 				Console.WriteLine($"Duplicated '{nameof(OptionAttribute)}' in property '{property.Name}'");
 				goto fail;
 			}
 			var optionType = property.PropertyType;
 			if (!IsSupportedType(optionType)) {
-				// 检查返回类型
+				// check option type
 				Console.WriteLine($"Unsupported type '{optionType}' in property '{property.Name}'");
 				goto fail;
 			}
 			option = (OptionAttribute)options[0];
 			if (option.IsDefault && optionType == typeof(bool)) {
-				// 默认选项不能为 bool 类型
+				// default option shouldn't bool type
 				Console.WriteLine($"Property '{property.Name}' is default option but option type is '{typeof(bool)}'");
 				goto fail;
 			}
 			if (!IsValidOptionName(option.Name, out char c)) {
-				// 检查选项名是否合法
+				// check option name
 				Console.WriteLine($"Invalid name char '{c}' in {OptionNameOrDefault(option)}");
 				goto fail;
 			}
@@ -173,20 +173,20 @@ namespace System.Cli {
 			if (defaultValue is null) {
 				return true;
 			}
-			// 下面是默认值检查
+			// the following code is the default value check
 			if (option.IsRequired) {
-				// 有默认值但选项是必选选项
+				// option has default value, but option is required
 				Console.WriteLine($"{OptionNameOrDefault(option, true)} is required but has default value '{defaultValue}'");
 				goto fail;
 			}
 			if (optionType == typeof(bool)) {
-				// 有默认值但选项类型为 bool
+				// option has default value, but option type is bool
 				Console.WriteLine($"Type of {OptionNameOrDefault(option, true)} is '{typeof(bool)}' but option has default value '{defaultValue}'");
 				goto fail;
 			}
 			var defaultValueType = defaultValue.GetType();
 			if (defaultValueType != optionType && defaultValueType != typeof(string)) {
-				// 有默认值但默认值的类型与属性的类型不相同
+				// option has default value, but type of default value is not supported
 				Console.WriteLine($"Type of default value ({defaultValueType}) is neither same as type of {OptionNameOrDefault(option)} ({optionType}) nor '{typeof(string)}'");
 				goto fail;
 			}
@@ -339,12 +339,12 @@ namespace System.Cli {
 
 			private void SetValue(object instance, object value) {
 				if (IsBoolean) {
-					// bool 类型，value 一定是装箱的 bool 值
+					// bool type, value should be a boxed bool object
 					_property.SetValue(instance, value, null);
 					return;
 				}
 				if (value is null || value.GetType() == Type) {
-					// value 是 null 或者 value 的类型等于选项类型，直接设置，不需要转换
+					// value is null or type of value equals option type, just set and don't convert
 					_property.SetValue(instance, value, null);
 					return;
 				}

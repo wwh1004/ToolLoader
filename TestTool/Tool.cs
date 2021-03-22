@@ -7,7 +7,7 @@ namespace TestTool {
 	internal sealed class Tool : ITool<ToolOptions> {
 		public string Title => "Test";
 
-		public void Execute(ToolOptions settings) {
+		public void Execute(ToolOptions options) {
 			Logger.Level = LogLevel.Verbose1;
 			Logger.Info($"LogLevel: {Logger.Level}");
 			Logger.Info("Info");
@@ -17,12 +17,12 @@ namespace TestTool {
 			Logger.Verbose2("Verbose2");
 			Logger.Verbose2("Verbose3");
 
-			string separator = new string('*', settings.RequiredOption.Length);
+			string separator = new string('*', options.RequiredOption.Length);
 			Logger.Info(separator);
-			Logger.Info($"DefaultOption: {settings.DefaultOption}");
-			Logger.Info($"RequiredOption: {settings.RequiredOption}");
-			Logger.Info($"OptionalOption: {settings.OptionalOption}");
-			Logger.Info($"OptionalOption2: {string.Join(", ", settings.OptionalOption2)}");
+			Logger.Info($"DefaultOption: {options.DefaultOption}");
+			Logger.Info($"RequiredOption: {options.RequiredOption}");
+			Logger.Info($"OptionalOption: {options.OptionalOption}");
+			Logger.Info($"OptionalOption2: {string.Join(", ", options.OptionalOption2)}");
 			Logger.Info(separator);
 
 			var lockedLogger = Logger.EnterLock();

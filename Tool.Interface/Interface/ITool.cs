@@ -2,8 +2,8 @@ namespace Tool.Interface {
 	/// <summary>
 	/// Tool interface
 	/// </summary>
-	/// <typeparam name="TToolSettings"></typeparam>
-	public interface ITool<TToolSettings> where TToolSettings : new() {
+	/// <typeparam name="TOptions"></typeparam>
+	public interface ITool<TOptions> where TOptions : new() {
 		/// <summary>
 		/// Returns tool title
 		/// </summary>
@@ -12,7 +12,7 @@ namespace Tool.Interface {
 		/// <summary>
 		/// Executes current tool
 		/// </summary>
-		/// <param name="settings">Tool settings</param>
-		void Execute(TToolSettings settings);
+		/// <param name="options">Tool options</param>
+		void Execute(TOptions options);
 	}
 }

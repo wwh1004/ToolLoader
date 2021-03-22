@@ -1,4 +1,4 @@
-namespace System.Cli {
+namespace System {
 	/// <summary>
 	/// Represents a command line option. The property which <see cref="OptionAttribute"/> is applied to must be an instance property and one of the following types: <see cref="bool"/>, <see cref="char"/>, <see cref="sbyte"/>, <see cref="byte"/>, <see cref="short"/>, <see cref="ushort"/>, <see cref="int"/>, <see cref="uint"/>, <see cref="long"/>, <see cref="ulong"/>, <see cref="float"/>, <see cref="double"/>, <see cref="decimal"/>, <see cref="DateTime"/>, <see cref="string"/>, <see cref="Enum"/> or array of them.
 	/// </summary>
