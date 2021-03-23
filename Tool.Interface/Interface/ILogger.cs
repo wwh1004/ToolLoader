@@ -51,12 +51,12 @@ namespace Tool.Interface {
 		bool IsAsync { get; set; }
 
 		/// <summary>
-		/// Indicates whether log queue is empty and background logger thread is idle
+		/// Indicates whether log queue is empty and background logger thread is idle (for async mode)
 		/// </summary>
 		bool IsIdle { get; }
 
 		/// <summary>
-		/// Indicates current enqueued log count
+		/// Indicates current enqueued log count (for async mode)
 		/// </summary>
 		int QueueCount { get; }
 
@@ -121,7 +121,7 @@ namespace Tool.Interface {
 		void Log(string value, LogLevel level, ConsoleColor? color = null);
 
 		/// <summary>
-		/// Immediately flushes buffer and waits to clear buffer
+		/// Immediately flushes buffer and waits to clear buffer (for async mode)
 		/// </summary>
 		void Flush();
 

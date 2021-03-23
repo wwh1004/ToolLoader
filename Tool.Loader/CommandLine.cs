@@ -22,7 +22,7 @@ namespace System {
 				Console.WriteLine($"Parameter '{nameof(args)}' is null");
 				goto fail;
 			}
-			if (args.Any(t => string.IsNullOrEmpty(t))) {
+			if (args.Any(t => t is null)) {
 				Console.WriteLine($"Contains arg in '{nameof(args)}' is null");
 				goto fail;
 			}
@@ -112,7 +112,7 @@ namespace System {
 		}
 
 		private static bool TryGetOptionInfos(Type type, out Dictionary<string, OptionInfo> optionInfos, out OptionInfo defaultOptionInfo) {
-			optionInfos = new Dictionary<string, OptionInfo>();
+			optionInfos = new Dictionary<string, OptionInfo>(StringComparer.OrdinalIgnoreCase);
 			defaultOptionInfo = null;
 			var properties = type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 			foreach (var property in properties) {
@@ -263,21 +263,52 @@ namespace System {
 				return true;
 			}
 
-			int maxNameLength = optionInfos.Max(t => t.DisplayName.Length);
-			int maxTypeNameLength = optionInfos.Max(t => t.Type.Name.Length);
-			int maxDescriptionLength = optionInfos.Max(t => t.Description.Length);
+			var lines = new List<StringBuilder>(optionInfos.Count);
+			for (int i = 0; i < optionInfos.Count; i++)
+				lines.Add(new StringBuilder());
+			AppendGroup(lines, _ => "  ");
+			AppendPadRightGroup(lines, i => optionInfos[i].DisplayName);
+			AppendGroup(lines, _ => "  ");
+			AppendPadRightGroup(lines, i => optionInfos[i].Type.Name);
+			AppendGroup(lines, _ => "  ");
+			AppendPadRightGroup(lines, i => optionInfos[i].Description);
+			AppendGroup(lines, i => !optionInfos[i].IsRequired ? "  (Optional)" : string.Empty);
+
 			var sb = new StringBuilder();
 			sb.AppendLine("Use -h --h /h -help --help /help to show these usage tips.");
 			sb.AppendLine("Options:");
-			foreach (var optionInfo in optionInfos) {
-				sb.Append($"  {optionInfo.DisplayName.PadRight(maxNameLength)}  {optionInfo.Type.Name.PadRight(maxTypeNameLength)}  {optionInfo.Description.PadRight(maxDescriptionLength)}");
-				if (!optionInfo.IsRequired)
-					sb.Append("  (Optional)");
-				sb.AppendLine();
-			}
+			foreach (var line in lines)
+				sb.AppendLine(line.ToString());
 
 			Console.WriteLine(sb.ToString());
 			return true;
+		}
+
+		private static void AppendGroup(List<StringBuilder> lines, Func<int, string> s) {
+			for (int i = 0; i < lines.Count; i++)
+				lines[i].Append(s(i));
+		}
+
+		private static void AppendPadRightGroup(List<StringBuilder> lines, Func<int, string> s) {
+			int maxWidth = Enumerable.Range(0, lines.Count).Max(i => CountHalfWidth(s(i)));
+			for (int i = 0; i < lines.Count; i++) {
+				string v = s(i);
+				lines[i].Append(v);
+				int delta = maxWidth - CountHalfWidth(s(i));
+				if (delta != 0)
+					lines[i].Append(new string(' ', delta));
+			}
+		}
+
+		private static int CountHalfWidth(string s) {
+			int count = 0;
+			foreach (char c in s)
+				count += IsHalfWidth(c) ? 1 : 2;
+			return count;
+		}
+
+		private static bool IsHalfWidth(char c) {
+			return ('\u0000' <= c && c <= '\u00FF') || ('\uFF61' <= c && c <= '\uFFDC') || ('\uFFE8' <= c && c <= '\uFFEE');
 		}
 
 		private sealed class OptionInfo {
@@ -366,7 +397,7 @@ namespace System {
 
 			private static object Parse(string s, Type type) {
 				if (type.IsEnum)
-					return Enum.Parse(type, s);
+					return Enum.Parse(type, s, true);
 
 				switch (Type.GetTypeCode(type)) {
 				case TypeCode.Boolean: return bool.Parse(s);

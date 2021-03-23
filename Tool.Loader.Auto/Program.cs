@@ -31,7 +31,7 @@ namespace Tool.Loader.Auto {
 			string loaderName;
 			if (assemblyPath is null) {
 				Console.WriteLine("Assembly path not found.");
-				loaderName = "Tool.Loader.CLR40.x86.exe";
+				loaderName = "Tool.Loader.CLR40.x64.exe";
 			}
 			else {
 				try {
@@ -49,7 +49,7 @@ namespace Tool.Loader.Auto {
 				}
 				catch {
 					Console.Error.WriteLine("Error occured on determining the exact loader.");
-					loaderName = "Tool.Loader.CLR40.x86.exe";
+					loaderName = "Tool.Loader.CLR40.x64.exe";
 				}
 			}
 			Console.WriteLine("Using loader: " + loaderName);

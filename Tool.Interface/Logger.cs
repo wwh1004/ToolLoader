@@ -34,12 +34,12 @@ namespace Tool {
 		public static bool IsAsync { get => Impl.IsAsync; set => Impl.IsAsync = value; }
 
 		/// <summary>
-		/// Indicates whether log queue is empty and background logger thread is idle
+		/// Indicates whether log queue is empty and background logger thread is idle (for async mode)
 		/// </summary>
 		public static bool IsIdle => Impl.IsIdle;
 
 		/// <summary>
-		/// Indicates current enqueued log count
+		/// Indicates current enqueued log count (for async mode)
 		/// </summary>
 		public static int QueueCount => Impl.QueueCount;
 
@@ -104,7 +104,7 @@ namespace Tool {
 		public static void Log(string value, LogLevel level, ConsoleColor? color = null) { Impl.Log(value, level, color); }
 
 		/// <summary>
-		/// Immediately flushes buffer and waits to clear buffer
+		/// Immediately flushes buffer and waits to clear buffer (for async mode)
 		/// </summary>
 		public static void Flush() { Impl.Flush(); }
 

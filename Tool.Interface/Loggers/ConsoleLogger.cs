@@ -1,7 +1,5 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Reflection;
 using System.Text;
 using System.Threading;
@@ -116,14 +114,14 @@ namespace Tool.Loggers {
 		public bool IsIdle {
 			get {
 				CheckFreed();
-				return _context.Core.IsIdle;
+				return LoggerCore.IsIdle;
 			}
 		}
 
 		public int QueueCount {
 			get {
 				CheckFreed();
-				return _context.Core.QueueCount;
+				return LoggerCore.QueueCount;
 			}
 		}
 
@@ -161,22 +159,28 @@ namespace Tool.Loggers {
 
 		public void Flush() {
 			CheckFreed();
-			_context.Core.Flush();
+			LoggerCore.Flush();
 		}
 		#endregion
 
 		#region core
 		private sealed class LoggerCore {
 			private const int INTERVAL = 5;
-			private const int MAX_INTERVAL = 200;
+			private const int MAX_DELAY_COUT = 20;
 			private const int MAX_CACHE_COUNT = 5000;
 
+			private static bool _isIdle = true;
+			private static readonly object _logLock = new object();
+			private static readonly ManualResetEvent _asyncIdleEvent = new ManualResetEvent(true);
+			private static readonly Queue<LogItem> _asyncQueue = new Queue<LogItem>();
+			private static readonly object _asyncLock = new object();
+			private static readonly Thread _asyncWorker = new Thread(AsyncLoop) {
+				Name = $"{nameof(ConsoleLogger)}.{nameof(AsyncLoop)}",
+				IsBackground = true
+			};
+
 			private LogLevel _level;
-			private bool _isAsync;
-			private bool _isIdle;
-			private readonly Thread _asyncWorker;
-			private readonly Queue<LogItem> _asyncQueue;
-			private readonly object _asyncTrigger;
+			private volatile bool _isAsync;
 
 			public LogLevel Level {
 				get => _level;
@@ -185,24 +189,25 @@ namespace Tool.Loggers {
 
 			public bool IsAsync {
 				get => _isAsync;
-				set => _isAsync = value;
+				set {
+					if (value == _isAsync)
+						return;
+
+					lock (_logLock) {
+						_isAsync = value;
+						if (!value)
+							Flush();
+					}
+				}
 			}
 
-			public bool IsIdle => _isIdle;
+			public static bool IsIdle => _isIdle;
 
-			public int QueueCount => _asyncQueue.Count;
+			public static int QueueCount => _asyncQueue.Count;
 
 			public LoggerCore() {
 				_level = LogLevel.Info;
-				_isAsync = Debugger.IsAttached;
-				_isIdle = true;
-				_asyncWorker = new Thread(AsyncLoop) {
-					Name = $"{nameof(ConsoleLogger)}.{nameof(AsyncLoop)}",
-					IsBackground = true
-				};
-				_asyncWorker.Start();
-				_asyncQueue = new Queue<LogItem>();
-				_asyncTrigger = new object();
+				_isAsync = true;
 			}
 
 			public void Info(ILogger logger) {
@@ -245,19 +250,26 @@ namespace Tool.Loggers {
 			}
 
 			public void LogCore(string value, LogLevel level, ConsoleColor? color) {
-				if (_isAsync) {
-					_asyncQueue.Enqueue(new LogItem(value, level, color));
-					lock (_asyncTrigger)
-						Monitor.Pulse(_asyncTrigger);
-				}
-				else {
-					WriteConsole(value, level, color);
+				if (level > Level)
+					return;
+
+				lock (_logLock) {
+					if (_isAsync) {
+						lock (_asyncLock) {
+							_asyncQueue.Enqueue(new LogItem(value, level, color));
+							if ((_asyncWorker.ThreadState & ThreadState.Unstarted) != 0)
+								_asyncWorker.Start();
+							Monitor.Pulse(_asyncLock);
+						}
+					}
+					else {
+						WriteConsole(value, color);
+					}
 				}
 			}
 
-			public void Flush() {
-				while (!_isIdle)
-					Thread.Sleep(INTERVAL / 3);
+			public static void Flush() {
+				_asyncIdleEvent.WaitOne();
 			}
 
 			private static string ExceptionToString(Exception exception) {
@@ -284,16 +296,17 @@ namespace Tool.Loggers {
 				}
 			}
 
-			private void AsyncLoop() {
+			private static void AsyncLoop() {
 				var sb = new StringBuilder();
 				while (true) {
-					lock (((ICollection)_asyncQueue).SyncRoot) {
+					lock (_asyncLock) {
 						if (_asyncQueue.Count == 0) {
 							_isIdle = true;
-							lock (_asyncTrigger)
-								Monitor.Wait(_asyncTrigger);
+							_asyncIdleEvent.Set();
+							Monitor.Wait(_asyncLock);
 						}
 						_isIdle = false;
+						_asyncIdleEvent.Reset();
 					}
 					// 等待输出被触发
 
@@ -303,11 +316,11 @@ namespace Tool.Loggers {
 						oldCount = _asyncQueue.Count;
 						Thread.Sleep(INTERVAL);
 						delayCount++;
-					} while (_asyncQueue.Count > oldCount && delayCount < MAX_INTERVAL / INTERVAL && _asyncQueue.Count < MAX_CACHE_COUNT);
+					} while (_asyncQueue.Count > oldCount && delayCount < MAX_DELAY_COUT && _asyncQueue.Count < MAX_CACHE_COUNT);
 					// 也许此时有其它要输出的内容
 
 					var currents = default(Queue<LogItem>);
-					lock (((ICollection)_asyncQueue).SyncRoot) {
+					lock (_asyncLock) {
 						currents = new Queue<LogItem>(_asyncQueue);
 						_asyncQueue.Clear();
 					}
@@ -337,15 +350,12 @@ namespace Tool.Loggers {
 							sb.Append(currents.Dequeue().Value);
 						}
 						// 合并日志等级与颜色相同的，减少重绘带来的性能损失
-						WriteConsole(sb.ToString(), current.Level, color);
+						WriteConsole(sb.ToString(), color);
 					} while (currents.Count > 0);
 				}
 			}
 
-			private void WriteConsole(string value, LogLevel level, ConsoleColor? color) {
-				if (level > Level)
-					return;
-
+			private static void WriteConsole(string value, ConsoleColor? color) {
 				ConsoleColor oldColor = default;
 				if (color.HasValue) {
 					oldColor = Console.ForegroundColor;
