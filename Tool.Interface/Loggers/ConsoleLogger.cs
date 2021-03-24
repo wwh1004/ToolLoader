@@ -165,10 +165,6 @@ namespace Tool.Loggers {
 
 		#region core
 		private sealed class LoggerCore {
-			private const int INTERVAL = 5;
-			private const int MAX_DELAY_COUT = 20;
-			private const int MAX_CACHE_COUNT = 5000;
-
 			private static bool _isIdle = true;
 			private static readonly object _logLock = new object();
 			private static readonly ManualResetEvent _asyncIdleEvent = new ManualResetEvent(true);
@@ -309,15 +305,6 @@ namespace Tool.Loggers {
 						_asyncIdleEvent.Reset();
 					}
 					// 等待输出被触发
-
-					int delayCount = 0;
-					int oldCount;
-					do {
-						oldCount = _asyncQueue.Count;
-						Thread.Sleep(INTERVAL);
-						delayCount++;
-					} while (_asyncQueue.Count > oldCount && delayCount < MAX_DELAY_COUT && _asyncQueue.Count < MAX_CACHE_COUNT);
-					// 也许此时有其它要输出的内容
 
 					var currents = default(Queue<LogItem>);
 					lock (_asyncLock) {
