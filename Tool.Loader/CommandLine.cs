@@ -255,9 +255,10 @@ namespace System {
 		public static bool ShowUsage<T>() {
 			if (!TryGetOptionInfos(typeof(T), out var optionInfoMap, out var defaultOptionInfo))
 				return false;
-			var optionInfos = optionInfoMap.Values.ToList();
+			var optionInfos = new List<OptionInfo>(optionInfoMap.Count + 1);
 			if (!(defaultOptionInfo is null))
 				optionInfos.Add(defaultOptionInfo);
+			optionInfos.AddRange(optionInfoMap.Values);
 			if (optionInfos.Count == 0) {
 				Console.WriteLine("No option available");
 				return true;
