@@ -1,7 +1,7 @@
 using System;
 using System.Threading;
-using Tool;
 using Tool.Interface;
+using Tool.Logging;
 
 namespace TestTool {
 	internal sealed class Tool : ITool<ToolOptions> {

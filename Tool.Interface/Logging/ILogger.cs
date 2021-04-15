@@ -1,99 +1,116 @@
 using System;
-using Tool.Interface;
-using Tool.Loggers;
 
-namespace Tool {
+namespace Tool.Logging {
 	/// <summary>
-	/// Global logger
+	/// Log level
 	/// </summary>
-	public static class Logger {
+	public enum LogLevel {
 		/// <summary>
-		/// Gets current logger implement
+		/// Error
 		/// </summary>
-		/// <returns></returns>
-		public static ILogger Impl => ExternImpl ?? ConsoleLogger.Instance;
+		Error,
 
 		/// <summary>
-		/// Gets default logger implement
+		/// Warning
 		/// </summary>
-		public static ILogger DefaultImpl => ConsoleLogger.Instance;
+		Warning,
 
 		/// <summary>
-		/// Gets or sets customized logger
+		/// Information
 		/// </summary>
-		public static ILogger? ExternImpl { get; set; }
+		Info,
 
+		/// <summary>
+		/// Verbose info（Level 1）
+		/// </summary>
+		Verbose1,
+
+		/// <summary>
+		/// Verbose info（Level 2）
+		/// </summary>
+		Verbose2,
+
+		/// <summary>
+		/// Verbose info（Level 3）
+		/// </summary>
+		Verbose3
+	}
+
+	/// <summary>
+	/// Tool logger interface
+	/// </summary>
+	public interface ILogger {
 		/// <summary>
 		/// Indicates current log level, only logs of which log level greater than or equal to current log level will be logged
 		/// </summary>
-		public static LogLevel Level { get => Impl.Level; set => Impl.Level = value; }
+		LogLevel Level { get; set; }
 
 		/// <summary>
 		/// Indicates current logger in running in async mode
 		/// </summary>
-		public static bool IsAsync { get => Impl.IsAsync; set => Impl.IsAsync = value; }
+		bool IsAsync { get; set; }
 
 		/// <summary>
 		/// Indicates whether log queue is empty and background logger thread is idle (for async mode)
 		/// </summary>
-		public static bool IsIdle => Impl.IsIdle;
+		bool IsIdle { get; }
 
 		/// <summary>
 		/// Indicates current enqueued log count (for async mode)
 		/// </summary>
-		public static int QueueCount => Impl.QueueCount;
+		int QueueCount { get; }
 
 		/// <summary>
 		/// Indicates whether current logger is locked. If locked, only who owners lock can access current logger
 		/// </summary>
-		public static bool IsLocked => Impl.IsLocked;
+		bool IsLocked { get; }
 
 		/// <summary>
 		/// Logs empty line
 		/// </summary>
-		public static void Info() { Impl.Info(); }
+		void Info();
 
 		/// <summary>
 		/// Logs info and wraps
 		/// </summary>
 		/// <param name="value"></param>
-		public static void Info(string value) { Impl.Info(value); }
+		void Info(string? value);
 
 		/// <summary>
 		/// Logs warning and wraps
 		/// </summary>
 		/// <param name="value"></param>
-		public static void Warning(string value) { Impl.Warning(value); }
+		void Warning(string? value);
 
 		/// <summary>
 		/// Logs error and wraps
 		/// </summary>
 		/// <param name="value"></param>
-		public static void Error(string value) { Impl.Error(value); }
+		void Error(string? value);
 
 		/// <summary>
 		/// Logs level 1 verbose info and wraps
 		/// </summary>
 		/// <param name="value"></param>
-		public static void Verbose1(string value) { Impl.Verbose1(value); }
+		void Verbose1(string? value);
 
 		/// <summary>
 		/// Logs level 2 verbose info and wraps
 		/// </summary>
 		/// <param name="value"></param>
-		public static void Verbose2(string value) { Impl.Verbose2(value); }
+		void Verbose2(string? value);
 
 		/// <summary>
 		/// Logs level 3 verbose info and wraps
 		/// </summary>
 		/// <param name="value"></param>
-		public static void Verbose3(string value) { Impl.Verbose3(value); }
+		void Verbose3(string? value);
 
 		/// <summary>
 		/// Logs exception and wraps
 		/// </summary>
 		/// <param name="value"></param>
-		public static void Exception(Exception value) { Impl.Exception(value); }
+		void Exception(Exception? value);
 
 		/// <summary>
 		/// Logs text with specified color and wraps
@@ -101,23 +118,23 @@ namespace Tool {
 		/// <param name="value"></param>
 		/// <param name="level"></param>
 		/// <param name="color"></param>
-		public static void Log(string value, LogLevel level, ConsoleColor? color = null) { Impl.Log(value, level, color); }
+		void Log(string? value, LogLevel level, ConsoleColor? color = null);
 
 		/// <summary>
 		/// Immediately flushes buffer and waits to clear buffer (for async mode)
 		/// </summary>
-		public static void Flush() { Impl.Flush(); }
+		void Flush();
 
 		/// <summary>
 		/// Gets current logger with lock, current logger can be accessd only by the returned sub logger
 		/// </summary>
 		/// <returns></returns>
-		public static ILogger EnterLock() { return Impl.EnterLock(); }
+		ILogger EnterLock();
 
 		/// <summary>
 		/// Exits lock mode and returns parent logger
 		/// </summary>
 		/// <returns></returns>
-		public static ILogger ExitLock() { return Impl.ExitLock(); }
+		ILogger ExitLock();
 	}
 }

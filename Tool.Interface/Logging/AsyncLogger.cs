@@ -4,81 +4,73 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading;
-using Tool.Interface;
 
-namespace Tool.Loggers {
+namespace Tool.Logging {
 	/// <summary>
-	/// Buffered logger
+	/// Async logger.
+	/// In derived class, you must override <see cref="LogCore"/>.
 	/// </summary>
-	public class BufferedLogger : ILogger {
-		private readonly Context _context;
+	public class AsyncLogger : ILogger {
+		private readonly LoggerCore _core;
 		private bool _isFreed;
 
 		/// <inheritdoc />
-		public virtual bool IsLocked => _context.IsLocked;
+		public virtual bool IsLocked => _core.Context.IsLocked;
 
 		/// <summary>
 		/// Constructor
 		/// </summary>
-		/// <param name="callback"></param>
-		public BufferedLogger(LogCallback callback) : this(new Context(new LoggerCore(callback))) {
-			_context.Creator = this;
-			_context.Owner = this;
+		protected AsyncLogger() {
+			_core = new LoggerCore(new Context(this, this, LogCore));
 		}
 
-		private BufferedLogger(Context context) {
-			_context = context;
+		private AsyncLogger(LoggerCore core) {
+			_core = core;
 		}
 
-		/// <inheritdoc />
-		public virtual void Log(string value, LogLevel level, ConsoleColor? color = null) {
-			CheckFreed();
-			if (_context.IsLocked) {
-			relock:
-				if (_context.Owner != this) {
-					lock (_context.LockObj) {
-						if (_context.Owner != this) {
-							Monitor.Wait(_context.LockObj);
-							goto relock;
-						}
-					}
-				}
-			}
-
-			_context.Core.LogCore(value, level, color);
+		/// <summary>
+		/// Immediately write the log without buffer. Derived class must override this method!
+		/// </summary>
+		/// <param name="value"></param>
+		/// <param name="level"></param>
+		/// <param name="color"></param>
+		protected virtual void LogCore(string value, LogLevel level, ConsoleColor? color) {
+			throw new NotImplementedException($"In derived class, you must override '{nameof(LogCore)}'");
 		}
 
 		/// <inheritdoc />
 		public virtual ILogger EnterLock() {
 			CheckFreed();
-			if (this != _context.Creator)
+			var context = _core.Context;
+			if (this != context.Creator)
 				throw new InvalidOperationException("Nested lock is not supported");
 
 			relock:
-			lock (_context.LockObj) {
-				if (_context.IsLocked) {
-					Monitor.Wait(_context.LockObj);
+			lock (context.LockObj) {
+				if (context.IsLocked) {
+					Monitor.Wait(context.LockObj);
 					goto relock;
 				}
 
-				_context.Owner = new BufferedLogger(_context);
-				_context.IsLocked = true;
-				return _context.Owner;
+				context.Owner = new AsyncLogger(_core);
+				context.IsLocked = true;
+				return context.Owner;
 			}
 		}
 
 		/// <inheritdoc />
 		public virtual ILogger ExitLock() {
 			CheckFreed();
-			if (_context.Creator == this)
+			var context = _core.Context;
+			if (context.Creator == this)
 				throw new InvalidOperationException("No lock can be exited");
 
 			_isFreed = true;
-			_context.Owner = _context.Creator;
-			_context.IsLocked = false;
-			lock (_context.LockObj)
-				Monitor.PulseAll(_context.LockObj);
-			return _context.Owner;
+			context.Owner = context.Creator;
+			context.IsLocked = false;
+			lock (context.LockObj)
+				Monitor.PulseAll(context.LockObj);
+			return context.Owner;
 		}
 
 		/// <summary>
@@ -89,17 +81,30 @@ namespace Tool.Loggers {
 				throw new InvalidOperationException("Current logger is freed");
 		}
 
-		private sealed class Context {
-			public readonly object LockObj = new();
-			public readonly LoggerCore Core;
-			public BufferedLogger Creator;
-			public volatile BufferedLogger Owner;
-			public volatile bool IsLocked;
+		/// <summary>
+		/// Format exception
+		/// </summary>
+		/// <param name="exception"></param>
+		/// <returns></returns>
+		protected static string FormatException(Exception? exception) {
+			var sb = new StringBuilder();
+			DumpException(exception, sb);
+			return sb.ToString();
+		}
 
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-			public Context(LoggerCore core) {
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-				Core = core;
+		private static void DumpException(Exception? exception, StringBuilder sb) {
+			exception ??= new ArgumentNullException(nameof(exception), "<No exception object>");
+			sb.AppendLine($"Type: {Environment.NewLine}{exception.GetType().FullName}");
+			sb.AppendLine($"Message: {Environment.NewLine}{exception.Message}");
+			sb.AppendLine($"Source: {Environment.NewLine}{exception.Source}");
+			sb.AppendLine($"StackTrace: {Environment.NewLine}{exception.StackTrace}");
+			sb.AppendLine($"TargetSite: {Environment.NewLine}{exception.TargetSite}");
+			sb.AppendLine("----------------------------------------");
+			if (!(exception.InnerException is null))
+				DumpException(exception.InnerException, sb);
+			if (exception is ReflectionTypeLoadException reflectionTypeLoadException) {
+				foreach (var loaderException in reflectionTypeLoadException.LoaderExceptions)
+					DumpException(loaderException, sb);
 			}
 		}
 
@@ -108,11 +113,11 @@ namespace Tool.Loggers {
 		public virtual LogLevel Level {
 			get {
 				CheckFreed();
-				return _context.Core.Level;
+				return _core.Level;
 			}
 			set {
 				CheckFreed();
-				_context.Core.Level = value;
+				_core.Level = value;
 			}
 		}
 
@@ -120,11 +125,11 @@ namespace Tool.Loggers {
 		public virtual bool IsAsync {
 			get {
 				CheckFreed();
-				return _context.Core.IsAsync;
+				return _core.IsAsync;
 			}
 			set {
 				CheckFreed();
-				_context.Core.IsAsync = value;
+				_core.IsAsync = value;
 			}
 		}
 
@@ -146,42 +151,56 @@ namespace Tool.Loggers {
 
 		/// <inheritdoc />
 		public virtual void Info() {
-			_context.Core.Info(this);
+			CheckFreed();
+			_core.Info(this);
 		}
 
 		/// <inheritdoc />
-		public virtual void Info(string value) {
-			_context.Core.Info(value, this);
+		public virtual void Info(string? value) {
+			CheckFreed();
+			_core.Info(value, this);
 		}
 
 		/// <inheritdoc />
-		public virtual void Warning(string value) {
-			_context.Core.Warning(value, this);
+		public virtual void Warning(string? value) {
+			CheckFreed();
+			_core.Warning(value, this);
 		}
 
 		/// <inheritdoc />
-		public virtual void Error(string value) {
-			_context.Core.Error(value, this);
+		public virtual void Error(string? value) {
+			CheckFreed();
+			_core.Error(value, this);
 		}
 
 		/// <inheritdoc />
-		public virtual void Verbose1(string value) {
-			_context.Core.Verbose1(value, this);
+		public virtual void Verbose1(string? value) {
+			CheckFreed();
+			_core.Verbose1(value, this);
 		}
 
 		/// <inheritdoc />
-		public virtual void Verbose2(string value) {
-			_context.Core.Verbose2(value, this);
+		public virtual void Verbose2(string? value) {
+			CheckFreed();
+			_core.Verbose2(value, this);
 		}
 
 		/// <inheritdoc />
-		public virtual void Verbose3(string value) {
-			_context.Core.Verbose3(value, this);
+		public virtual void Verbose3(string? value) {
+			CheckFreed();
+			_core.Verbose3(value, this);
 		}
 
 		/// <inheritdoc />
-		public virtual void Exception(Exception value) {
-			_context.Core.Exception(value, this);
+		public virtual void Exception(Exception? value) {
+			CheckFreed();
+			_core.Exception(value, this);
+		}
+
+		/// <inheritdoc />
+		public virtual void Log(string? value, LogLevel level, ConsoleColor? color = null) {
+			CheckFreed();
+			_core.Log(value, level, color, this);
 		}
 
 		/// <inheritdoc />
@@ -192,6 +211,23 @@ namespace Tool.Loggers {
 		#endregion
 
 		#region core
+		private delegate void LogCallback(string value, LogLevel level, ConsoleColor? color);
+
+		private sealed class Context {
+			public readonly object LockObj = new();
+
+			public ILogger Creator;
+			public volatile ILogger Owner;
+			public volatile bool IsLocked;
+			public readonly LogCallback Callback;
+
+			public Context(ILogger creator, ILogger owner, LogCallback callback) {
+				Creator = creator;
+				Owner = owner;
+				Callback = callback;
+			}
+		}
+
 		private sealed class LoggerCore {
 			private static bool _isIdle = true;
 			private static readonly object _logLock = new();
@@ -199,13 +235,15 @@ namespace Tool.Loggers {
 			private static readonly Queue<LogItem> _asyncQueue = new();
 			private static readonly object _asyncLock = new();
 			private static readonly Thread _asyncWorker = new(AsyncLoop) {
-				Name = $"{nameof(BufferedLogger)}.{nameof(AsyncLoop)}",
+				Name = $"{nameof(AsyncLogger)}.{nameof(AsyncLoop)}",
 				IsBackground = true
 			};
 
-			private LogCallback _callback;
+			private readonly Context _context;
 			private LogLevel _level;
 			private volatile bool _isAsync;
+
+			public Context Context => _context;
 
 			public LogLevel Level {
 				get => _level;
@@ -230,8 +268,8 @@ namespace Tool.Loggers {
 
 			public static int QueueCount => _asyncQueue.Count;
 
-			public LoggerCore(LogCallback callback) {
-				_callback = callback ?? throw new ArgumentNullException(nameof(callback));
+			public LoggerCore(Context context) {
+				_context = context ?? throw new ArgumentNullException(nameof(context));
 				_level = LogLevel.Info;
 				_isAsync = true;
 			}
@@ -240,86 +278,68 @@ namespace Tool.Loggers {
 				Log(string.Empty, LogLevel.Info, null, logger);
 			}
 
-			public void Info(string value, ILogger logger) {
+			public void Info(string? value, ILogger logger) {
 				Log(value, LogLevel.Info, ConsoleColor.Gray, logger);
 			}
 
-			public void Warning(string value, ILogger logger) {
+			public void Warning(string? value, ILogger logger) {
 				Log(value, LogLevel.Warning, ConsoleColor.Yellow, logger);
 			}
 
-			public void Error(string value, ILogger logger) {
+			public void Error(string? value, ILogger logger) {
 				Log(value, LogLevel.Error, ConsoleColor.Red, logger);
 			}
 
-			public void Verbose1(string value, ILogger logger) {
+			public void Verbose1(string? value, ILogger logger) {
 				Log(value, LogLevel.Verbose1, ConsoleColor.DarkGray, logger);
 			}
 
-			public void Verbose2(string value, ILogger logger) {
+			public void Verbose2(string? value, ILogger logger) {
 				Log(value, LogLevel.Verbose2, ConsoleColor.DarkGray, logger);
 			}
 
-			public void Verbose3(string value, ILogger logger) {
+			public void Verbose3(string? value, ILogger logger) {
 				Log(value, LogLevel.Verbose3, ConsoleColor.DarkGray, logger);
 			}
 
-			public void Exception(Exception value, ILogger logger) {
-				if (value is null)
-					throw new ArgumentNullException(nameof(value));
-
-				Error(ExceptionToString(value), logger);
+			public void Exception(Exception? value, ILogger logger) {
+				Error(FormatException(value), logger);
 			}
 
-			public void Log(string value, LogLevel level, ConsoleColor? color, ILogger logger) {
-				logger.Log(value, level, color);
-			}
+			public void Log(string? value, LogLevel level, ConsoleColor? color, ILogger logger) {
+				if (_context.IsLocked) {
+				relock:
+					if (_context.Owner != logger) {
+						lock (_context.LockObj) {
+							if (_context.Owner != logger) {
+								Monitor.Wait(_context.LockObj);
+								goto relock;
+							}
+						}
+					}
+				}
 
-			public void LogCore(string value, LogLevel level, ConsoleColor? color) {
 				if (level > Level)
 					return;
 
+				value ??= string.Empty;
 				lock (_logLock) {
 					if (_isAsync) {
 						lock (_asyncLock) {
-							_asyncQueue.Enqueue(new(_callback, value, level, color));
+							_asyncQueue.Enqueue(new(_context.Callback, value, level, color));
 							if ((_asyncWorker.ThreadState & ThreadState.Unstarted) != 0)
 								_asyncWorker.Start();
 							Monitor.Pulse(_asyncLock);
 						}
 					}
 					else {
-						_callback(value, level, color);
+						_context.Callback(value, level, color);
 					}
 				}
 			}
 
 			public static void Flush() {
 				_asyncIdleEvent.WaitOne();
-			}
-
-			private static string ExceptionToString(Exception exception) {
-				if (exception is null)
-					throw new ArgumentNullException(nameof(exception));
-
-				var sb = new StringBuilder();
-				DumpException(exception, sb);
-				return sb.ToString();
-			}
-
-			private static void DumpException(Exception exception, StringBuilder sb) {
-				sb.AppendLine($"Type: {Environment.NewLine}{exception.GetType().FullName}");
-				sb.AppendLine($"Message: {Environment.NewLine}{exception.Message}");
-				sb.AppendLine($"Source: {Environment.NewLine}{exception.Source}");
-				sb.AppendLine($"StackTrace: {Environment.NewLine}{exception.StackTrace}");
-				sb.AppendLine($"TargetSite: {Environment.NewLine}{exception.TargetSite}");
-				sb.AppendLine("----------------------------------------");
-				if (!(exception.InnerException is null))
-					DumpException(exception.InnerException, sb);
-				if (exception is ReflectionTypeLoadException reflectionTypeLoadException) {
-					foreach (var loaderException in reflectionTypeLoadException.LoaderExceptions)
-						DumpException(loaderException, sb);
-				}
 			}
 
 			private static void AsyncLoop() {
@@ -336,11 +356,12 @@ namespace Tool.Loggers {
 					}
 					// 等待输出被触发
 
-					Queue<LogItem>[] currentsByCallback;
+					LogItem[] logItems;
 					lock (_asyncLock) {
-						currentsByCallback = _asyncQueue.GroupBy(t => t.Callback).Select(t => new Queue<LogItem>(t)).ToArray();
+						logItems = _asyncQueue.ToArray();
 						_asyncQueue.Clear();
 					}
+					var currentsByCallback = logItems.GroupBy(t => t.Callback).Select(t => new Queue<LogItem>(t)).ToArray();
 					// 获取全部要输出的内容
 
 					foreach (var currents in currentsByCallback) {
