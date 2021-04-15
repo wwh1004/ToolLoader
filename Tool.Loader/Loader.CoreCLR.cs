@@ -23,12 +23,14 @@ namespace Tool.Loader {
 		[DllImport("kernel32.dll", BestFitMapping = false, CharSet = CharSet.Unicode, SetLastError = true)]
 		private static extern bool VirtualProtect(void* lpAddress, uint dwSize, uint flNewProtect, out uint lpflOldProtect);
 
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 #if !NETCORE21
 		private static AssemblyDependencyResolver _dependencyResolver;
 		private static HashSet<string> _resolvingAssemblies;
 #else
 		private static HashSet<string> _resolvingAssemblies;
 #endif
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 		public static void Execute(string[] args) {
 			try {
@@ -45,7 +47,10 @@ namespace Tool.Loader {
 				commandLine.Append(Console.ReadLine());
 				Console.WriteLine();
 				Console.WriteLine();
-				Execute(CommandLineToArgs(commandLine.ToString()));
+				string[]? parsedArgs = CommandLineToArgs(commandLine.ToString());
+				if (parsedArgs is null)
+					throw new InvalidOperationException("Can't parse command line arguments.");
+				Execute(parsedArgs);
 				return;
 			}
 			string toolPath = Path.GetFullPath(args[0]);
@@ -60,27 +65,27 @@ namespace Tool.Loader {
 #endif
 			object tool = CreateToolInstance(GetOrLoadAssembly(toolPath), out var optionsType);
 			try {
-				Console.Title = (string)tool.GetType().GetProperty("Title").GetValue(tool, null);
+				Console.Title = (string)tool.GetType().GetProperty("Title")!.GetValue(tool, null)!;
 			}
 			catch {
 			}
 			string[] toolArguments = new string[args.Length - 1];
 			for (int i = 0; i < toolArguments.Length; i++)
 				toolArguments[i] = args[i + 1];
-			object[] invokeParameters = new object[] { toolArguments, null };
-			if ((bool)typeof(CommandLine).GetMethod("TryParse").MakeGenericMethod(optionsType).Invoke(null, invokeParameters)) {
-				var executeStub = typeof(Loader).GetMethod("ExecuteStub", BindingFlags.NonPublic | BindingFlags.Static);
-				var realExecute = tool.GetType().GetMethod("Execute", BindingFlags.Public | BindingFlags.Instance, null, new Type[] { optionsType }, null);
+			object?[] invokeParameters = new object?[] { toolArguments, null, null };
+			if ((bool)typeof(CommandLine).GetMethod("TryParse")!.MakeGenericMethod(optionsType).Invoke(null, invokeParameters)!) {
+				var executeStub = typeof(Loader).GetMethod("ExecuteStub", BindingFlags.NonPublic | BindingFlags.Static)!;
+				var realExecute = tool.GetType().GetMethod("Execute", BindingFlags.Public | BindingFlags.Instance, null, new Type[] { optionsType }, null)!;
 				RuntimeHelpers.PrepareMethod(executeStub.MethodHandle);
 				RuntimeHelpers.PrepareMethod(realExecute.MethodHandle);
 				byte* address = (byte*)executeStub.MethodHandle.GetFunctionPointer();
 				byte* target = (byte*)realExecute.MethodHandle.GetFunctionPointer();
 				if (address != target)
 					WriteJmp(address, target);
-				ExecuteStub(tool, invokeParameters[1]);
+				ExecuteStub(tool, invokeParameters[1]!);
 			}
 			else {
-				typeof(CommandLine).GetMethod("ShowUsage").MakeGenericMethod(optionsType).Invoke(null, null);
+				typeof(CommandLine).GetMethod("ShowUsage")!.MakeGenericMethod(optionsType).Invoke(null, null);
 			}
 			if (IsN00bUser() || Debugger.IsAttached) {
 				Console.WriteLine("Press any key to exit...");
@@ -93,7 +98,7 @@ namespace Tool.Loader {
 		}
 
 #if !NETCORE21
-		private static Assembly ResolveAssembly(AssemblyLoadContext loadContext, AssemblyName assemblyName) {
+		private static Assembly? ResolveAssembly(AssemblyLoadContext loadContext, AssemblyName assemblyName) {
 			try {
 				if (!_resolvingAssemblies.Add(assemblyName.FullName))
 					return null;
@@ -102,7 +107,7 @@ namespace Tool.Loader {
 				return assembly;
 			}
 			catch {
-				string assemblyPath = _dependencyResolver.ResolveAssemblyToPath(assemblyName);
+				string? assemblyPath = _dependencyResolver.ResolveAssemblyToPath(assemblyName);
 				if (assemblyPath is null)
 					return null;
 				return loadContext.LoadFromAssemblyPath(assemblyPath);
@@ -110,13 +115,13 @@ namespace Tool.Loader {
 		}
 
 		private static IntPtr ResolveUnmanagedDll(Assembly assembly, string unmanagedDllName) {
-			string unmanagedDllPath = _dependencyResolver.ResolveUnmanagedDllToPath(unmanagedDllName);
+			string? unmanagedDllPath = _dependencyResolver.ResolveUnmanagedDllToPath(unmanagedDllName);
 			if (unmanagedDllPath is null)
 				return IntPtr.Zero;
 			throw new NotImplementedException($"Can't load {unmanagedDllName}");
 		}
 #else
-		private static Assembly ResolveAssembly(AssemblyLoadContext loadContext, AssemblyName assemblyName) {
+		private static Assembly? ResolveAssembly(AssemblyLoadContext loadContext, AssemblyName assemblyName) {
 			try {
 				if (!_resolvingAssemblies.Add(assemblyName.FullName))
 					return null;
@@ -135,7 +140,7 @@ namespace Tool.Loader {
 
 		private static string GetTitle() {
 			string productName = GetAssemblyAttribute<AssemblyProductAttribute>().Product;
-			string version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+			string version = Assembly.GetExecutingAssembly().GetName().Version!.ToString();
 			string copyright = GetAssemblyAttribute<AssemblyCopyrightAttribute>().Copyright.Substring(12);
 			int firstBlankIndex = copyright.IndexOf(' ');
 			string copyrightOwnerName = copyright.Substring(firstBlankIndex + 1);
@@ -147,7 +152,7 @@ namespace Tool.Loader {
 			return (T)Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(T), false)[0];
 		}
 
-		private static string[] CommandLineToArgs(string commandLine) {
+		private static string[]? CommandLineToArgs(string commandLine) {
 			int length;
 			char** pArgs = CommandLineToArgv(commandLine, &length);
 			if (pArgs == null)
@@ -175,7 +180,7 @@ namespace Tool.Loader {
 					if (genericArguments.Length != 1)
 						continue;
 					optionsType = genericArguments[0];
-					return Activator.CreateInstance(type);
+					return Activator.CreateInstance(type)!;
 				}
 			}
 			throw new InvalidOperationException("Tool type not found");
@@ -224,8 +229,8 @@ namespace Tool.Loader {
 		}
 
 		private static bool HasEnv(string name) {
-			foreach (object key in Environment.GetEnvironmentVariables().Keys) {
-				if (!(key is string env))
+			foreach (object? key in Environment.GetEnvironmentVariables().Keys) {
+				if (key is not string env)
 					continue;
 				if (string.Equals(env, name, StringComparison.OrdinalIgnoreCase))
 					return true;

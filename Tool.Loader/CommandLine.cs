@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
@@ -10,14 +11,14 @@ namespace System {
 			if (args is null)
 				throw new ArgumentNullException(nameof(args));
 
-			if (!TryParse(args, out T result, out showUsage))
+			if (!TryParse(args, out T? result, out showUsage))
 				throw new FormatException($"Invalid {nameof(args)} or generic argument {typeof(T)}");
 			if (showUsage && !ShowUsage<T>())
 				throw new FormatException($"Can't generate usage for {typeof(T)}");
-			return result;
+			return result!;
 		}
 
-		public static bool TryParse<T>(string[] args, out T result, out bool showUsage) where T : class, new() {
+		public static bool TryParse<T>(string[] args, out T? result, out bool showUsage) where T : class, new() {
 			if (args is null) {
 				Console.WriteLine($"Parameter '{nameof(args)}' is null");
 				goto fail;
@@ -45,7 +46,7 @@ namespace System {
 
 				result = null;
 				showUsage = true;
-				return true;
+				return false;
 			}
 
 			result = new T();
@@ -111,17 +112,17 @@ namespace System {
 			return false;
 		}
 
-		private static bool TryGetOptionInfos(Type type, out Dictionary<string, OptionInfo> optionInfos, out OptionInfo defaultOptionInfo) {
+		private static bool TryGetOptionInfos(Type type, [NotNullWhen(true)] out Dictionary<string, OptionInfo>? optionInfos, out OptionInfo? defaultOptionInfo) {
 			optionInfos = new Dictionary<string, OptionInfo>(StringComparer.OrdinalIgnoreCase);
 			defaultOptionInfo = null;
 			var properties = type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 			foreach (var property in properties) {
-				if (!VerifyProperty(property, out var option))
+				if (!VerifyProperty(property, out var option, out bool isExcluded))
 					goto fail;
-				if (option is null)
+				if (isExcluded)
 					continue;
 
-				if (!option.IsDefault) {
+				if (!option!.IsDefault) {
 					optionInfos.Add(option.Name, new OptionInfo(option, property));
 				}
 				else if (defaultOptionInfo is null) {
@@ -140,13 +141,15 @@ namespace System {
 			return false;
 		}
 
-		private static bool VerifyProperty(PropertyInfo property, out OptionAttribute option) {
+		private static bool VerifyProperty(PropertyInfo property, out OptionAttribute? option, out bool isExcluded) {
 			option = null;
 			object[] options = property.GetCustomAttributes(typeof(OptionAttribute), false);
 			if (options is null || options.Length == 0) {
 				// exclude properties without OptionAttribute
+				isExcluded = true;
 				return true;
 			}
+			isExcluded = false;
 			if (options.Length != 1) {
 				// OptionAttribute shouldn't be applied more than one times
 				Console.WriteLine($"Duplicated '{nameof(OptionAttribute)}' in property '{property.Name}'");
@@ -169,7 +172,7 @@ namespace System {
 				Console.WriteLine($"Invalid name char '{c}' in {OptionNameOrDefault(option)}");
 				goto fail;
 			}
-			object defaultValue = option.DefaultValue;
+			object? defaultValue = option.DefaultValue;
 			if (defaultValue is null) {
 				return true;
 			}
@@ -218,7 +221,7 @@ namespace System {
 			if (type.IsArray) {
 				if (type.GetArrayRank() != 1)
 					return false;
-				return IsSupportedTypeCore(type.GetElementType());
+				return IsSupportedTypeCore(type.GetElementType()!);
 			}
 
 			return IsSupportedTypeCore(type);
@@ -333,7 +336,7 @@ namespace System {
 
 			public char Separator => _option.Separator;
 
-			public object DefaultValue => _option.DefaultValue;
+			public object? DefaultValue => _option.DefaultValue;
 
 			public string Description => _option.Description ?? string.Empty;
 
@@ -350,7 +353,7 @@ namespace System {
 				_property = property;
 			}
 
-			public bool TrySetValue(object instance, object value) {
+			public bool TrySetValue(object instance, object? value) {
 				if (_hasSetValue) {
 					Console.WriteLine($"{OptionNameOrDefault(_option, true)} has been set");
 					return false;
@@ -363,13 +366,13 @@ namespace System {
 				}
 				catch (Exception ex) {
 					if (ex is TargetInvocationException ex2)
-						ex = ex2.InnerException;
+						ex = ex2.InnerException!;
 					Console.WriteLine($"Fail to set {OptionNameOrDefault(_option)} , {ex.GetType()}: {ex.Message}");
 					return false;
 				}
 			}
 
-			private void SetValue(object instance, object value) {
+			private void SetValue(object instance, object? value) {
 				if (IsBoolean) {
 					// bool type, value should be a boxed bool object
 					_property.SetValue(instance, value, null);
@@ -384,7 +387,7 @@ namespace System {
 				string s = (string)value;
 				if (IsArray) {
 					string[] elements = s.Split(_option.Separator).Select(t => t.Trim()).Where(t => t.Length != 0).ToArray();
-					var elementType = Type.GetElementType();
+					var elementType = Type.GetElementType()!;
 					var values = Array.CreateInstance(elementType, elements.Length);
 					for (int i = 0; i < elements.Length; i++)
 						values.SetValue(Parse(elements[i], elementType), i);

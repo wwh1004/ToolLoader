@@ -27,17 +27,18 @@ namespace System {
 		/// <summary>
 		/// By default, when <see cref="IsRequired"/> is <see langword="true"/>, <see cref="DefaultValue"/> must be <see langword="null"/>
 		/// </summary>
-		public object DefaultValue { get; set; }
+		public object? DefaultValue { get; set; }
 
 		/// <summary>
 		/// Option description, which is used to describe this option
 		/// </summary>
-		public string Description { get; set; }
+		public string Description { get; set; } = string.Empty;
 
 		/// <summary>
 		/// Constructor
 		/// </summary>
 		public OptionAttribute() {
+			Name = string.Empty;
 		}
 
 		/// <summary>

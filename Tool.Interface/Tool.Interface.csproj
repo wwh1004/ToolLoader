@@ -1,9 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<Title>$(ProjectName)</Title>
-		<Version>3.0.4.0</Version>
+		<Version>3.0.5.0</Version>
 		<Copyright>Copyright © 2018-2021 Wwh</Copyright>
 		<TargetFramework>net35</TargetFramework>
+		<LangVersion>9.0</LangVersion>
+		<Nullable>enable</Nullable>
 		<OutputPath>..\bin\$(Configuration)</OutputPath>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>

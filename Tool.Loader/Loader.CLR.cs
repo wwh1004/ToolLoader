@@ -36,7 +36,10 @@ namespace Tool.Loader {
 				commandLine.Append(Console.ReadLine());
 				Console.WriteLine();
 				Console.WriteLine();
-				Execute(CommandLineToArgs(commandLine.ToString()));
+				string[]? parsedArgs = CommandLineToArgs(commandLine.ToString());
+				if (parsedArgs is null)
+					throw new InvalidOperationException("Can't parse command line arguments.");
+				Execute(parsedArgs);
 				return;
 			}
 			string toolPath = args[0];
@@ -49,8 +52,8 @@ namespace Tool.Loader {
 			string[] toolArguments = new string[args.Length - 1];
 			for (int i = 0; i < toolArguments.Length; i++)
 				toolArguments[i] = args[i + 1];
-			object[] invokeParameters = new object[] { toolArguments, null, null };
-			if ((bool)typeof(CommandLine).GetMethod("TryParse").MakeGenericMethod(optionsType).Invoke(null, invokeParameters) && !(bool)invokeParameters[2]) {
+			object?[] invokeParameters = new object?[] { toolArguments, null, null };
+			if ((bool)typeof(CommandLine).GetMethod("TryParse").MakeGenericMethod(optionsType).Invoke(null, invokeParameters) && !(bool)invokeParameters[2]!) {
 				var executeStub = typeof(Loader).GetMethod("ExecuteStub", BindingFlags.NonPublic | BindingFlags.Static);
 				var realExecute = tool.GetType().GetMethod("Execute", BindingFlags.Public | BindingFlags.Instance, null, new Type[] { optionsType }, null);
 				RuntimeHelpers.PrepareMethod(executeStub.MethodHandle);
@@ -59,7 +62,7 @@ namespace Tool.Loader {
 				byte* target = (byte*)realExecute.MethodHandle.GetFunctionPointer();
 				if (address != target)
 					WriteJmp(address, target);
-				ExecuteStub(tool, invokeParameters[1]);
+				ExecuteStub(tool, invokeParameters[1]!);
 			}
 			else {
 				typeof(CommandLine).GetMethod("ShowUsage").MakeGenericMethod(optionsType).Invoke(null, null);
@@ -88,7 +91,7 @@ namespace Tool.Loader {
 			return (T)Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(T), false)[0];
 		}
 
-		private static string[] CommandLineToArgs(string commandLine) {
+		private static string[]? CommandLineToArgs(string commandLine) {
 			int length;
 			char** pArgs = CommandLineToArgv(commandLine, &length);
 			if (pArgs == null)
@@ -166,7 +169,7 @@ namespace Tool.Loader {
 
 		private static bool HasEnv(string name) {
 			foreach (object key in Environment.GetEnvironmentVariables().Keys) {
-				if (!(key is string env))
+				if (key is not string env)
 					continue;
 				if (string.Equals(env, name, StringComparison.OrdinalIgnoreCase))
 					return true;

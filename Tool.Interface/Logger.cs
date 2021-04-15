@@ -21,7 +21,7 @@ namespace Tool {
 		/// <summary>
 		/// Gets or sets customized logger
 		/// </summary>
-		public static ILogger ExternImpl { get; set; }
+		public static ILogger? ExternImpl { get; set; }
 
 		/// <summary>
 		/// Indicates current log level, only logs of which log level greater than or equal to current log level will be logged

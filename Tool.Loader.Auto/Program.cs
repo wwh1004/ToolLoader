@@ -27,7 +27,7 @@ namespace Tool.Loader.Auto {
 				return;
 
 
-			string assemblyPath = GetAssemblyPath(args);
+			string? assemblyPath = GetAssemblyPath(args);
 			string loaderName;
 			if (assemblyPath is null) {
 				Console.WriteLine("Assembly path not found.");
@@ -64,9 +64,9 @@ namespace Tool.Loader.Auto {
 			process.WaitForExit();
 		}
 
-		private static string GetAssemblyPath(string[] args) {
-			string defaultOption = null;
-			string fOption = null;
+		private static string? GetAssemblyPath(string[] args) {
+			string? defaultOption = null;
+			string? fOption = null;
 			for (int i = 1; i < args.Length; i++) {
 				string arg = args[i];
 				if (MaybeOptionName(arg)) {
@@ -112,7 +112,7 @@ namespace Tool.Loader.Auto {
 		}
 
 		private static void GetDotNetInfo(Stream stream, out bool is64Bit, out string version) {
-			version = null;
+			version = string.Empty;
 			using var reader = new BinaryReader(stream);
 			GetPEInfo(reader, out uint peOffset, out is64Bit);
 			reader.BaseStream.Position = peOffset + (is64Bit ? 0xF8 : 0xE8);
