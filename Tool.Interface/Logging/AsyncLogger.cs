@@ -366,6 +366,11 @@ namespace Tool.Logging {
 
 					foreach (var currents in currentsByCallback) {
 						// 按回调方法分组输出
+						foreach (var logItem in currents) {
+							if (string.IsNullOrEmpty(logItem.Value))
+								logItem.Color = null;
+							// 空行是什么颜色不重要，统一设置颜色为null
+						}
 						var callback = currents.Peek().Callback;
 						do {
 							var current = currents.Dequeue();
