@@ -106,7 +106,7 @@ namespace Tool.Loader {
 		private static Assembly GetOrLoadAssembly(string assemblyPath) {
 			string assemblyName = Path.GetFileNameWithoutExtension(assemblyPath);
 			var assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(t => string.Equals(t.GetName().Name, assemblyName, StringComparison.OrdinalIgnoreCase));
-			return assembly ?? Assembly.LoadFile(Path.GetFullPath(assemblyPath));
+			return assembly ?? Assembly.LoadFrom(Path.GetFullPath(assemblyPath));
 		}
 
 		private static object CreateToolInstance(Assembly assembly, out Type optionsType) {
