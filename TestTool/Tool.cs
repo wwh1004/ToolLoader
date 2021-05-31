@@ -5,7 +5,7 @@ using Tool.Logging;
 
 namespace TestTool {
 	internal sealed class Tool : ITool<ToolOptions> {
-		public string Title => "Test";
+		public string Title => null;
 
 		public void Execute(ToolOptions options) {
 			Logger.Level = LogLevel.Verbose1;

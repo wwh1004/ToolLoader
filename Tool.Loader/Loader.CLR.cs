@@ -23,7 +23,7 @@ namespace Tool.Loader {
 
 		public static void Execute(string[] args) {
 			try {
-				Console.Title = GetTitle();
+				Console.Title = GetTitle(Assembly.GetExecutingAssembly());
 			}
 			catch {
 			}
@@ -43,9 +43,13 @@ namespace Tool.Loader {
 				return;
 			}
 			string toolPath = args[0];
-			object tool = CreateToolInstance(GetOrLoadAssembly(toolPath), out var optionsType);
+			var toolAssembly = GetOrLoadAssembly(toolPath);
+			object tool = CreateToolInstance(toolAssembly, out var optionsType);
 			try {
-				Console.Title = (string)tool.GetType().GetProperty("Title").GetValue(tool, null);
+				string? title = (string?)tool.GetType().GetProperty("Title").GetValue(tool, null);
+				if (string.IsNullOrEmpty(title))
+					title = GetTitle(toolAssembly);
+				Console.Title = title;
 			}
 			catch {
 			}
@@ -77,18 +81,18 @@ namespace Tool.Loader {
 			}
 		}
 
-		private static string GetTitle() {
-			string productName = GetAssemblyAttribute<AssemblyProductAttribute>().Product;
-			string version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
-			string copyright = GetAssemblyAttribute<AssemblyCopyrightAttribute>().Copyright.Substring(12);
+		private static string GetTitle(Assembly assembly) {
+			string productName = GetAssemblyAttribute<AssemblyProductAttribute>(assembly).Product;
+			string version = assembly.GetName().Version.ToString();
+			string copyright = GetAssemblyAttribute<AssemblyCopyrightAttribute>(assembly).Copyright.Substring(12);
 			int firstBlankIndex = copyright.IndexOf(' ');
 			string copyrightOwnerName = copyright.Substring(firstBlankIndex + 1);
 			string copyrightYear = copyright.Substring(0, firstBlankIndex);
 			return $"{productName} v{version} by {copyrightOwnerName} {copyrightYear}";
 		}
 
-		private static T GetAssemblyAttribute<T>() {
-			return (T)Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(T), false)[0];
+		private static T GetAssemblyAttribute<T>(Assembly assembly) {
+			return (T)assembly.GetCustomAttributes(typeof(T), false)[0];
 		}
 
 		private static string[]? CommandLineToArgs(string commandLine) {
