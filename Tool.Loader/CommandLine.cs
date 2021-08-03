@@ -7,15 +7,15 @@ using System.Text;
 
 namespace System {
 	internal static class CommandLine {
-		public static T Parse<T>(string[] args, out bool showUsage) where T : class, new() {
+		public static T? Parse<T>(string[] args, out bool showUsage) where T : class, new() {
 			if (args is null)
 				throw new ArgumentNullException(nameof(args));
 
-			if (!TryParse(args, out T? result, out showUsage))
+			if (!TryParse(args, out T? result, out showUsage) && !showUsage)
 				throw new FormatException($"Invalid {nameof(args)} or generic argument {typeof(T)}");
 			if (showUsage && !ShowUsage<T>())
 				throw new FormatException($"Can't generate usage for {typeof(T)}");
-			return result!;
+			return result;
 		}
 
 		public static bool TryParse<T>(string[] args, out T? result, out bool showUsage) where T : class, new() {
