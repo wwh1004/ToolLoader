@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.28527.54
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.32112.339
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tool.Interface", "Tool.Interface\Tool.Interface.csproj", "{7E415A01-2335-4068-9378-D0D8E9E2E8CC}"
 EndProject
@@ -20,10 +20,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tool.Loader.CoreCLR31.x64", "Tool.Loader.CoreCLR31.x64\Tool.Loader.CoreCLR31.x64.csproj", "{843ABD26-D54A-4394-9A7E-DEB69B35A99D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tool.Loader.CoreCLR31.x86", "Tool.Loader.CoreCLR31.x86\Tool.Loader.CoreCLR31.x86.csproj", "{72B9EEB1-0E41-44A8-A92A-FE3CA1EDFB0D}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tool.Loader.CoreCLR21.x64", "Tool.Loader.CoreCLR21.x64\Tool.Loader.CoreCLR21.x64.csproj", "{6351B2EE-A651-4B07-89E3-77B3EFBE4B8D}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tool.Loader.CoreCLR21.x86", "Tool.Loader.CoreCLR21.x86\Tool.Loader.CoreCLR21.x86.csproj", "{9F7D25BE-F402-479C-A075-145A4F452B84}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -67,14 +63,6 @@ Global
 		{72B9EEB1-0E41-44A8-A92A-FE3CA1EDFB0D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{72B9EEB1-0E41-44A8-A92A-FE3CA1EDFB0D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{72B9EEB1-0E41-44A8-A92A-FE3CA1EDFB0D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6351B2EE-A651-4B07-89E3-77B3EFBE4B8D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6351B2EE-A651-4B07-89E3-77B3EFBE4B8D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6351B2EE-A651-4B07-89E3-77B3EFBE4B8D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6351B2EE-A651-4B07-89E3-77B3EFBE4B8D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9F7D25BE-F402-479C-A075-145A4F452B84}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9F7D25BE-F402-479C-A075-145A4F452B84}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9F7D25BE-F402-479C-A075-145A4F452B84}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9F7D25BE-F402-479C-A075-145A4F452B84}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

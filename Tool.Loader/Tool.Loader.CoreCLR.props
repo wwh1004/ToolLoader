@@ -3,4 +3,7 @@
 	<ItemGroup>
 		<Compile Include="..\Tool.Loader\Loader.CoreCLR.cs" />
 	</ItemGroup>
+	<PropertyGroup>
+		<NoWarn>NU1702</NoWarn>
+	</PropertyGroup>
 </Project>

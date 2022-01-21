@@ -2,9 +2,9 @@
 	<PropertyGroup>
 		<Title>$(ProjectName)</Title>
 		<Version>3.0.7.0</Version>
-		<Copyright>Copyright © 2018-2021 Wwh</Copyright>
+		<Copyright>Copyright © 2018-2022 Wwh</Copyright>
 		<TargetFramework>net35</TargetFramework>
-		<LangVersion>9.0</LangVersion>
+		<LangVersion>10.0</LangVersion>
 		<Nullable>enable</Nullable>
 		<OutputPath>..\bin\$(Configuration)</OutputPath>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>

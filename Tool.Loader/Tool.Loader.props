@@ -2,11 +2,11 @@
 	<PropertyGroup>
 		<Title>$(ProjectName)</Title>
 		<Version>3.0.8.0</Version>
-		<Copyright>Copyright © 2018-2021 Wwh</Copyright>
+		<Copyright>Copyright © 2018-2022 Wwh</Copyright>
 	</PropertyGroup>
 	<PropertyGroup>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<LangVersion>9.0</LangVersion>
+		<LangVersion>10.0</LangVersion>
 		<Nullable>enable</Nullable>
 		<OutputType>Exe</OutputType>
 		<OutputPath>..\bin\$(Configuration)</OutputPath>
