@@ -28,7 +28,7 @@ static class CommandLine {
 			Console.WriteLine($"Contains arg in '{nameof(args)}' is null");
 			goto fail;
 		}
-		if (!TryGetOptionInfos(typeof(T), out var optionInfos, out var defaultOptionInfo)) {
+		if (!TryGetOptionInfos(typeof(T), out var optionInfos, out var defaultOptionInfo, out var childOptionsProperty, out var childTypes)) {
 			goto fail;
 		}
 
@@ -50,12 +50,49 @@ static class CommandLine {
 			return false;
 		}
 
-		result = new T();
+		try {
+			result = new T();
+		}
+		catch (Exception ex) {
+			Console.WriteLine($"Can't create instance of type '{typeof(T)}': {ex.Message}");
+			goto fail;
+		}
+
+		var instances = new Dictionary<Type, object> {
+			[typeof(T)] = result
+		};
+		IDictionary<Type, object>? childOptionsMap = null;
+		if (childOptionsProperty is not null) {
+			try {
+				childOptionsMap = (IDictionary<Type, object>?)childOptionsProperty.GetValue(result, null);
+				if (childOptionsMap is null)
+					throw new NullReferenceException();
+			}
+			catch (Exception ex) {
+				Console.WriteLine($"Can't get value of property '{childOptionsProperty}': {ex.Message}");
+				goto fail;
+			}
+			foreach (var childType in childTypes) {
+				object? instance;
+				try {
+					instance = Activator.CreateInstance(childType);
+					if (instance is null)
+						throw new NullReferenceException();
+					childOptionsMap.Add(childType, instance);
+					instances.Add(childType, instance);
+				}
+				catch (Exception ex) {
+					Console.WriteLine($"Can't create instance of type '{childType}': {ex.Message}");
+					goto fail;
+				}
+			}
+		}
+
 		for (int i = 0; i < args.Length; i++) {
 			if (!optionInfos.TryGetValue(args[i], out var optionInfo)) {
 				if (defaultOptionInfo is not null && !defaultOptionInfo.HasSetValue) {
 					// default option
-					if (!defaultOptionInfo.TrySetValue(result, args[i]))
+					if (!defaultOptionInfo.TrySetValue(instances, args[i]))
 						goto fail;
 					continue;
 				}
@@ -68,7 +105,7 @@ static class CommandLine {
 
 			if (optionInfo.IsBoolean) {
 				// bool type, don't need other checks, set true
-				if (!optionInfo.TrySetValue(result, true))
+				if (!optionInfo.TrySetValue(instances, true))
 					goto fail;
 				continue;
 			}
@@ -79,7 +116,7 @@ static class CommandLine {
 				goto fail;
 			}
 
-			if (!optionInfo.TrySetValue(result, args[++i])) {
+			if (!optionInfo.TrySetValue(instances, args[++i])) {
 				goto fail;
 			}
 		}
@@ -96,12 +133,12 @@ static class CommandLine {
 			}
 			else if (optionInfo.IsBoolean) {
 				// bool option
-				if (!optionInfo.TrySetValue(result, false))
+				if (!optionInfo.TrySetValue(instances, false))
 					goto fail;
 			}
 			else {
 				// optional option
-				if (!optionInfo.TrySetValue(result, optionInfo.DefaultValue))
+				if (!optionInfo.TrySetValue(instances, optionInfo.DefaultValue))
 					goto fail;
 			}
 		}
@@ -113,21 +150,76 @@ static class CommandLine {
 		return false;
 	}
 
-	static bool TryGetOptionInfos(Type type, [NotNullWhen(true)] out Dictionary<string, OptionInfo>? optionInfos, out OptionInfo? defaultOptionInfo) {
+	static bool TryGetOptionInfos(Type type, [NotNullWhen(true)] out Dictionary<string, OptionInfo>? optionInfos, out OptionInfo? defaultOptionInfo, out PropertyInfo? childOptionsProperty, [NotNullWhen(true)] out List<Type>? childTypes) {
+		if (!TryGetOptionInfosCore(type, false, out optionInfos, out defaultOptionInfo))
+			goto fail;
+
+		childTypes = new List<Type>();
+		childOptionsProperty = type.GetProperty("ChildOptions", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+		if (childOptionsProperty is null || childOptionsProperty.PropertyType != typeof(IDictionary<Type, object>) || !childOptionsProperty.CanRead)
+			return true;
+
+		foreach (var childType in type.Module.GetTypes()) {
+			var childOptionsAttrs = (ChildOptionsAttribute[])childType.GetCustomAttributes(typeof(ChildOptionsAttribute), false);
+			if (childOptionsAttrs is null || childOptionsAttrs.Length == 0)
+				continue;
+
+			var childOptionsAttr = childOptionsAttrs.FirstOrDefault(t => t.Parent == type);
+			if (childOptionsAttr is null)
+				continue;
+
+			if (!IsValidOptionName(childOptionsAttr.Prefix, out char c)) {
+				// check child option prefix
+				Console.WriteLine($"Invalid name char '{c}' in child option prefix '{childOptionsAttr.Prefix}'");
+				goto fail;
+			}
+
+			if (!TryGetOptionInfosCore(childType, true, out var childOptionInfos, out _)) {
+				Console.WriteLine($"Can't get option infos for child options type '{childType}'");
+				goto fail;
+			}
+
+			foreach (var childOptionInfo in childOptionInfos.Values) {
+				childOptionInfo.Prefix = childOptionsAttr.Prefix;
+				if (optionInfos.ContainsKey(childOptionInfo.Name)) {
+					Console.WriteLine($"Duplicated option name '{childOptionInfo.Name}' in type '{type}' and '{childType}'");
+					goto fail;
+				}
+				optionInfos.Add(childOptionInfo.Name, childOptionInfo);
+			}
+			childTypes.Add(childType);
+		}
+		return true;
+
+	fail:
+		optionInfos = null;
+		defaultOptionInfo = null;
+		childOptionsProperty = null;
+		childTypes = null;
+		return false;
+	}
+
+	static bool TryGetOptionInfosCore(Type type, bool isChild, [NotNullWhen(true)] out Dictionary<string, OptionInfo>? optionInfos, out OptionInfo? defaultOptionInfo) {
 		optionInfos = new Dictionary<string, OptionInfo>(StringComparer.OrdinalIgnoreCase);
 		defaultOptionInfo = null;
 		var properties = type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 		foreach (var property in properties) {
-			if (!VerifyProperty(property, out var option, out bool isExcluded))
+			if (!TryGetOptionAttribute(property, isChild, out var option, out bool isExcluded))
 				goto fail;
 			if (isExcluded)
 				continue;
 
-			if (!option!.IsDefault) {
-				optionInfos.Add(option.Name, new OptionInfo(option, property));
+			var optionInfo = new OptionInfo(option!, type, property);
+			if (optionInfos.ContainsKey(optionInfo.Name)) {
+				Console.WriteLine($"Duplicated option name '{optionInfo.Name}' in type '{type}'");
+				goto fail;
+			}
+
+			if (!optionInfo.IsDefault) {
+				optionInfos.Add(optionInfo.Name, optionInfo);
 			}
 			else if (defaultOptionInfo is null) {
-				defaultOptionInfo = new OptionInfo(option, property);
+				defaultOptionInfo = optionInfo;
 			}
 			else {
 				Console.WriteLine($"Both property '{defaultOptionInfo.Property.Name}' and property '{property.Name}' are default options");
@@ -142,7 +234,7 @@ static class CommandLine {
 		return false;
 	}
 
-	static bool VerifyProperty(PropertyInfo property, out OptionAttribute? option, out bool isExcluded) {
+	static bool TryGetOptionAttribute(PropertyInfo property, bool isChild, out OptionAttribute? option, out bool isExcluded) {
 		option = null;
 		var options = property.GetCustomAttributes(typeof(OptionAttribute), false);
 		if (options is null || options.Length == 0) {
@@ -163,6 +255,11 @@ static class CommandLine {
 			goto fail;
 		}
 		option = (OptionAttribute)options[0];
+		if (isChild && option.IsDefault) {
+			// don't allow default option in child options
+			Console.WriteLine($"Property '{property.Name}' is default option but default option is not allowed in type with '{nameof(ChildOptionsAttribute)}'");
+			goto fail;
+		}
 		if (option.IsDefault && optionType == typeof(bool)) {
 			// default option shouldn't bool type
 			Console.WriteLine($"Property '{property.Name}' is default option but option type is '{typeof(bool)}'");
@@ -257,7 +354,7 @@ static class CommandLine {
 	}
 
 	public static bool ShowUsage<T>() {
-		if (!TryGetOptionInfos(typeof(T), out var optionInfoMap, out var defaultOptionInfo))
+		if (!TryGetOptionInfos(typeof(T), out var optionInfoMap, out var defaultOptionInfo, out _, out _))
 			return false;
 		var optionInfos = new List<OptionInfo>(optionInfoMap.Count + 1);
 		if (defaultOptionInfo is not null)
@@ -320,16 +417,19 @@ static class CommandLine {
 		delegate T Parser<T>(string s, NumberStyles style);
 
 		readonly OptionAttribute option;
+		readonly Type declaringType;
 		readonly PropertyInfo property;
 		bool hasSetValue;
 
 		public OptionAttribute Option => option;
 
+		public Type DeclaringType => declaringType;
+
 		public PropertyInfo Property => property;
 
-		public string Name => option.Name ?? string.Empty;
+		public string Name => Prefix + (option.Name ?? string.Empty);
 
-		public string DisplayName => !string.IsNullOrEmpty(option.Name) ? option.Name : "<default>";
+		public string DisplayName => !string.IsNullOrEmpty(Name) ? Name : "<default>";
 
 		public bool IsDefault => option.IsDefault;
 
@@ -349,12 +449,15 @@ static class CommandLine {
 
 		public bool HasSetValue => hasSetValue;
 
-		public OptionInfo(OptionAttribute option, PropertyInfo property) {
+		public string Prefix { get; set; } = string.Empty;
+
+		public OptionInfo(OptionAttribute option, Type declaringType, PropertyInfo property) {
 			this.option = option;
+			this.declaringType = declaringType;
 			this.property = property;
 		}
 
-		public bool TrySetValue(object instance, object? value) {
+		public bool TrySetValue(Dictionary<Type, object> instances, object? value) {
 			if (hasSetValue) {
 				Console.WriteLine($"{OptionNameOrDefault(option, true)} has been set");
 				return false;
@@ -362,7 +465,7 @@ static class CommandLine {
 
 			hasSetValue = true;
 			try {
-				SetValue(instance, value);
+				SetValue(instances[DeclaringType], value);
 				return true;
 			}
 			catch (Exception ex) {
@@ -387,7 +490,7 @@ static class CommandLine {
 
 			var s = (string)value;
 			if (IsArray) {
-				var elements = s.Split(option.Separator).Select(t => t.Trim()).Where(t => t.Length != 0).ToArray();
+				var elements = s.Split(Separator).Select(t => t.Trim()).Where(t => t.Length != 0).ToArray();
 				var elementType = Type.GetElementType()!;
 				var values = Array.CreateInstance(elementType, elements.Length);
 				for (int i = 0; i < elements.Length; i++)

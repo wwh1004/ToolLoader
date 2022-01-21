@@ -24,6 +24,8 @@ sealed class Tool : ITool<ToolOptions> {
 		Logger.Info($"RequiredOption: {options.RequiredOption}");
 		Logger.Info($"OptionalOption: {options.OptionalOption}");
 		Logger.Info($"OptionalOption2: {string.Join(", ", options.OptionalOption2)}");
+		Logger.Info($"ChildOption1: {options.ChildOption<ChildToolOptions1>().ChildOption1}");
+		Logger.Info($"ChildOption2: {options.ChildOption<ChildToolOptions2>().ChildOption2}");
 		Logger.Info(separator);
 
 		var lockedLogger = Logger.EnterLock();
