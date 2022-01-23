@@ -25,7 +25,6 @@ partial class AsyncLogger {
 	}
 
 	sealed class LoggerCore {
-		static bool isIdle = true;
 		static readonly object logLock = new();
 		static readonly ManualResetEvent asyncIdleEvent = new(true);
 		static readonly Queue<LogItem> asyncQueue = new();
@@ -60,7 +59,7 @@ partial class AsyncLogger {
 			}
 		}
 
-		public static bool IsIdle => isIdle;
+		public static bool IsIdle => asyncQueue.Count == 0;
 
 		public static int QueueCount => asyncQueue.Count;
 
@@ -135,7 +134,13 @@ partial class AsyncLogger {
 		}
 
 		public static void Flush() {
+		retry:
 			asyncIdleEvent.WaitOne();
+			if (!IsIdle) {
+				Thread.Sleep(0);
+				goto retry;
+			}
+			// AsyncLoop的执行线程可能停留在'Monitor.Wait(asyncLock)'这一行代码还没来得及相应
 		}
 
 		static void AsyncLoop() {
@@ -143,11 +148,9 @@ partial class AsyncLogger {
 			while (true) {
 				lock (asyncLock) {
 					if (asyncQueue.Count == 0) {
-						isIdle = true;
 						asyncIdleEvent.Set();
 						Monitor.Wait(asyncLock);
 					}
-					isIdle = false;
 					asyncIdleEvent.Reset();
 				}
 				// 等待输出被触发
