@@ -136,9 +136,10 @@ sealed class Tool : ITool<ToolOptions> {
 		Logger.Info("Info");
 		Logger.Warning("Warning");
 		Logger.Error("Error");
-		Logger.Verbose1("Verbose1");
+		Logger.Verbose1($"Verbose1, options.ChildOptions.Count: {options.ChildOptions.Count:X8}");
 		Logger.Verbose2("Verbose2");
-		Logger.Verbose2("Verbose3");
+		Logger.Verbose3("Verbose3");
+		Logger.Verbose3($"Verbose{3:X} with InterpolatedStringHandler: {typeof(Logger.Verbose3InterpolatedStringHandler)}");
 
 		var separator = new string('*', options.RequiredOption.Length);
 		Logger.Info(separator);
@@ -194,7 +195,7 @@ LogLevel: Verbose1
 Info
 Warning
 Error
-Verbose1
+Verbose1, options.ChildOptions.Count: 00000002
 *************
 DefaultOption: Test2
 RequiredOption: TestTool.dll1
@@ -214,7 +215,7 @@ test
 Source:
 TestTool
 StackTrace:
-   at TestTool.Tool.Execute(ToolOptions options) in D:\Projects\ToolLoader\TestTool\Tool.cs:line 40
+   at TestTool.Tool.Execute(ToolOptions options) in D:\Projects\ToolLoader\TestTool\Tool.cs:line 41
 TargetSite:
 Void Execute(TestTool.ToolOptions)
 ----------------------------------------

@@ -5,7 +5,7 @@ namespace Tool.Logging;
 /// <summary>
 /// Global logger
 /// </summary>
-public static class Logger {
+public static partial class Logger {
 	/// <summary>
 	/// Gets current logger implement
 	/// </summary>
@@ -77,16 +77,34 @@ public static class Logger {
 	public static void Verbose1(string? value) { Impl.Verbose1(value); }
 
 	/// <summary>
+	/// Logs level 1 verbose info and wraps
+	/// </summary>
+	/// <param name="value"></param>
+	public static void Verbose1(ref Verbose1InterpolatedStringHandler value) { var s = value.ToStringAndClear(); if (s is not null) Impl.Verbose1(s); }
+
+	/// <summary>
 	/// Logs level 2 verbose info and wraps
 	/// </summary>
 	/// <param name="value"></param>
 	public static void Verbose2(string? value) { Impl.Verbose2(value); }
 
 	/// <summary>
+	/// Logs level 2 verbose info and wraps
+	/// </summary>
+	/// <param name="value"></param>
+	public static void Verbose2(ref Verbose2InterpolatedStringHandler value) { var s = value.ToStringAndClear(); if (s is not null) Impl.Verbose2(s); }
+
+	/// <summary>
 	/// Logs level 3 verbose info and wraps
 	/// </summary>
 	/// <param name="value"></param>
 	public static void Verbose3(string? value) { Impl.Verbose3(value); }
+
+	/// <summary>
+	/// Logs level 3 verbose info and wraps
+	/// </summary>
+	/// <param name="value"></param>
+	public static void Verbose3(ref Verbose3InterpolatedStringHandler value) { var s = value.ToStringAndClear(); if (s is not null) Impl.Verbose3(s); }
 
 	/// <summary>
 	/// Logs exception and wraps

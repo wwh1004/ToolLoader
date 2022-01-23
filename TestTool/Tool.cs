@@ -14,9 +14,10 @@ sealed class Tool : ITool<ToolOptions> {
 		Logger.Info("Info");
 		Logger.Warning("Warning");
 		Logger.Error("Error");
-		Logger.Verbose1("Verbose1");
+		Logger.Verbose1($"Verbose1, options.ChildOptions.Count: {options.ChildOptions.Count:X8}");
 		Logger.Verbose2("Verbose2");
-		Logger.Verbose2("Verbose3");
+		Logger.Verbose3("Verbose3");
+		Logger.Verbose3($"Verbose{3:X} with InterpolatedStringHandler: {typeof(Logger.Verbose3InterpolatedStringHandler)}");
 
 		var separator = new string('*', options.RequiredOption.Length);
 		Logger.Info(separator);
